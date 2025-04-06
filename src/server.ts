@@ -2,6 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import { connectDatabase } from './config/database';
 import { env, validateEnv } from './config/env';
+import { errorHandler } from './utils/error';
+import { startScheduledTasks } from './utils/scheduler';
+import articleRoutes from './routes/articleRoutes';
 
 // Validate environment variables
 validateEnv();
@@ -13,10 +16,24 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Routes (to be implemented)
+// API Routes
+app.use('/api/articles', articleRoutes);
+
+// Base route
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to The Actual Informer API' });
 });
+
+// Not found middleware
+app.use((req, res, next) => {
+  res.status(404).json({
+    success: false,
+    error: `Cannot ${req.method} ${req.originalUrl}`
+  });
+});
+
+// Error handling middleware
+app.use(errorHandler);
 
 // Start server
 const PORT = env.PORT;
@@ -29,6 +46,15 @@ const startServer = async () => {
     // Start Express server
     app.listen(PORT, () => {
       console.log(`Server running in ${env.NODE_ENV} mode on port ${PORT}`);
+      console.log(`API available at http://localhost:${PORT}/api/articles`);
+      
+      // Start scheduled tasks after server is running
+      if (env.NODE_ENV === 'production') {
+        startScheduledTasks();
+      } else {
+        console.log('Scheduled tasks disabled in development mode');
+        console.log('Use /api/articles/fetch and /api/articles/process-all endpoints to manually trigger data processing');
+      }
     });
   } catch (error) {
     console.error('Error starting server:', error);
