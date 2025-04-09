@@ -49,12 +49,8 @@ const startServer = async () => {
       console.log(`API available at http://localhost:${PORT}/api/articles`);
       
       // Start scheduled tasks after server is running
-      if (env.NODE_ENV === 'production') {
-        startScheduledTasks();
-      } else {
-        console.log('Scheduled tasks disabled in development mode');
-        console.log('Use /api/articles/fetch and /api/articles/process-all endpoints to manually trigger data processing');
-      }
+      startScheduledTasks();
+      console.log('Automatic article fetching DISABLED per user request');
     });
   } catch (error) {
     console.error('Error starting server:', error);

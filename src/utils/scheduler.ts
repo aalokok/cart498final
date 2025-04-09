@@ -10,15 +10,19 @@ const contentTransformationService = new ContentTransformationService();
  */
 export const fetchAndProcessNews = async () => {
   try {
-    console.log('Scheduled task: Fetching latest news articles...');
+    console.log('Article fetching disabled per user request');
+    /*
+    console.log('Scheduled task: Fetching all news articles at once...');
     
-    // Fetch latest news
-    await newsService.fetchLatestNews('general', 10);
-    console.log('Fetched news articles successfully');
+    // Use our new method to fetch all articles at once and categorize them
+    // Pass a larger number for pageSize to get more articles
+    await newsService.fetchAllArticlesAtOnce(100, 'en', '24h');
+    console.log('Successfully fetched and stored articles in MongoDB');
     
     // Process pending articles
-    const processedCount = await contentTransformationService.processAllPendingArticles();
+    const processedCount = await contentTransformationService.processPendingArticles();
     console.log(`Processed ${processedCount} articles`);
+    */
   } catch (error) {
     console.error('Error in scheduled news fetch:', error);
   }
@@ -34,9 +38,13 @@ export const startScheduledTasks = () => {
   
   console.log(`Starting scheduled tasks. News refresh interval: ${intervalMinutes} minutes`);
   
-  // Run once at startup
-  fetchAndProcessNews();
+  // Do not run article fetching at startup
+  console.log('Article fetching disabled per user request');
+  // fetchAndProcessNews();
   
-  // Set interval for future runs
-  setInterval(fetchAndProcessNews, intervalMs);
-}; 
+  // Do not set interval for future runs
+  console.log(`Automatic article fetching disabled per user request`);
+  // setInterval(fetchAndProcessNews, intervalMs);
+  
+  return;
+};

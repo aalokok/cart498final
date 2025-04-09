@@ -17,19 +17,21 @@ export const env = {
   
   // Settings
   NEWS_REFRESH_INTERVAL_MINUTES: parseInt(process.env.NEWS_REFRESH_INTERVAL_MINUTES || '60', 10),
-};
+} as const;
+
+type EnvKeys = keyof typeof env;
 
 // Validate environment variables
 export const validateEnv = (): void => {
-  const requiredEnvVars = [
+  const requiredEnvVars: EnvKeys[] = [
     'NEWS_API_KEY',
     'OPENAI_API_KEY',
     'ELEVENLABS_API_KEY',
   ];
 
   for (const envVar of requiredEnvVars) {
-    if (!process.env[envVar]) {
+    if (typeof env[envVar] === 'string' && env[envVar].length === 0) {
       console.warn(`Environment variable ${envVar} is not set. Some features may not work properly.`);
     }
   }
-}; 
+};
