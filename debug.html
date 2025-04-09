@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Articles</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .article-card {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .article-card:hover {
+            background-color: #f5f5f5;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .article-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .article-meta {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        .article-content {
+            font-size: 14px;
+            color: #333;
+            display: none;
+        }
+        .expanded .article-content {
+            display: block;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        .stats {
+            background: #f0f0f0;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .controls {
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 15px;
+            background: #4a6ee0;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #2e52c2;
+        }
+    </style>
+</head>
+<body>
+    <h1>Article Debug Page</h1>
+    
+    <div class="stats" id="stats">Loading statistics...</div>
+    
+    <div class="controls">
+        <button onclick="fetchArticles()">Show All Articles</button>
+        <button onclick="viewArticleById()">View Article By ID</button>
+        <button onclick="openInNewTab()">Open Normal Website</button>
+    </div>
+    
+    <div id="articles-container"></div>
+
+    <script>
+        // Fetch all articles from the API
+        async function fetchArticles() {
+            try {
+                document.getElementById('articles-container').innerHTML = 'Loading articles...';
+                const response = await fetch('http://localhost:3000/api/articles/all');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const articles = data.data;
+                    document.getElementById('stats').textContent = `Total articles: ${articles.length}`;
+                    
+                    let html = '';
+                    articles.forEach(article => {
+                        html += `
+                            <div class="article-card" onclick="toggleArticle(this)" data-id="${article._id}">
+                                <div class="article-title">${article.title}</div>
+                                <div class="article-meta">
+                                    ${article.sourceName || ''} • ${new Date(article.publishedAt).toLocaleDateString()}
+                                    ${article.transformedContent ? '• <strong>Has Right-Wing Rewrite</strong>' : ''}
+                                </div>
+                                <div class="article-content">
+                                    <p><strong>Original:</strong> ${article.content || 'No original content'}</p>
+                                    <p><strong>Rewritten:</strong> ${article.transformedContent || 'No rewritten content'}</p>
+                                    <p><a href="http://localhost:8082/#/article/${article._id}" target="_blank">Open in Regular Site</a></p>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    document.getElementById('articles-container').innerHTML = html;
+                } else {
+                    document.getElementById('articles-container').innerHTML = 'Error fetching articles';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('articles-container').innerHTML = 'Error fetching articles: ' + error.message;
+            }
+        }
+        
+        // Toggle article expansion
+        function toggleArticle(element) {
+            element.classList.toggle('expanded');
+        }
+        
+        // View article by ID
+        function viewArticleById() {
+            const id = prompt('Enter article ID:');
+            if (id) {
+                window.open(`http://localhost:8082/#/article/${id}`, '_blank');
+            }
+        }
+        
+        // Open the normal website in a new tab
+        function openInNewTab() {
+            window.open('http://localhost:8082', '_blank');
+        }
+        
+        // Load articles when page loads
+        window.onload = fetchArticles;
+    </script>
+</body>
+</html>

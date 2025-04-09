@@ -12,10 +12,16 @@
       
       <div class="d-flex justify-content-between mb-4">
         <h2>Latest News</h2>
-        <b-button variant="primary" @click="refreshNews" :disabled="loading">
-          <b-spinner small v-if="loading"></b-spinner> 
-          Refresh News
-        </b-button>
+        <div>
+          <b-button variant="info" class="mr-2" @click="fetchAllArticlesFromDatabase" :disabled="loading">
+            <b-spinner small v-if="loading"></b-spinner> 
+            Show ALL Articles
+          </b-button>
+          <b-button variant="primary" @click="refreshNews" :disabled="loading">
+            <b-spinner small v-if="loading"></b-spinner> 
+            Refresh News
+          </b-button>
+        </div>
       </div>
       
       <b-row>
@@ -32,6 +38,10 @@
           <article-card :article="article" />
         </b-col>
       </b-row>
+      
+      <div v-if="articles.length" class="text-center mb-5">
+        <p class="text-muted">Showing {{ articles.length }} articles</p>
+      </div>
     </div>
   </div>
 </template>
@@ -41,7 +51,7 @@ import { mapState, mapGetters, mapActions } from 'vuex'
 import ArticleCard from '@/components/ArticleCard.vue'
 
 export default {
-  name: 'Home',
+  name: 'HomePage',
   components: {
     ArticleCard
   },
@@ -57,11 +67,12 @@ export default {
   methods: {
     ...mapActions([
       'fetchArticles',
-      'refreshNews'
+      'refreshNews',
+      'fetchAllArticlesFromDatabase'
     ])
   },
   mounted() {
-    this.fetchArticles()
+    this.fetchAllArticlesFromDatabase()
   }
 }
 </script>
@@ -70,4 +81,24 @@ export default {
 .home {
   padding-bottom: 2rem;
 }
-</style> 
+
+.articles-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* Three equal columns */
+  gap: 20px; /* Adjust gap between cards */
+  padding: 20px; /* Add padding around the grid */
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) { /* Medium devices (tablets, less than 992px) */
+  .articles-grid {
+    grid-template-columns: repeat(2, 1fr); /* Two columns */
+  }
+}
+
+@media (max-width: 768px) { /* Small devices (landscape phones, less than 768px) */
+  .articles-grid {
+    grid-template-columns: 1fr; /* Single column */
+  }
+}
+</style>

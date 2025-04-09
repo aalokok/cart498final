@@ -1,7 +1,10 @@
-import mongoose, { Document, Schema } from 'mongoose';
+import mongoose, { Document, Schema, Types } from 'mongoose';
+
+export type PoliticalBias = 'left' | 'right' | 'neutral';
 
 // Interface to define the Article document structure
 export interface IArticle extends Document {
+  _id: Types.ObjectId;
   sourceId: string;
   sourceName: string;
   author: string;
@@ -16,11 +19,14 @@ export interface IArticle extends Document {
   transformedContent: string;
   generatedImageUrl: string;
   audioUrl: string;
+  explanation: string; // AI-generated explanation
   // Metadata
   category: string;
   isProcessed: boolean;
+  isAiGenerated: boolean;
+  politicalBias: PoliticalBias;
   processingStatus: 'pending' | 'text_completed' | 'image_completed' | 'audio_completed' | 'completed' | 'error';
-  errorMessage?: string;
+  processingError?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -44,19 +50,25 @@ const ArticleSchema: Schema = new Schema(
     transformedContent: { type: String },
     generatedImageUrl: { type: String },
     audioUrl: { type: String },
+    explanation: { type: String }, // AI-generated explanation
     
     // Metadata
-    category: { type: String, default: 'general' },
+    category: { type: String, required: true },
     isProcessed: { type: Boolean, default: false },
-    processingStatus: { 
-      type: String, 
+    isAiGenerated: { type: Boolean, default: false },
+    politicalBias: { 
+      type: String,
+      enum: ['left', 'right', 'neutral'],
+      default: 'neutral'
+    },
+    processingStatus: {
+      type: String,
       enum: ['pending', 'text_completed', 'image_completed', 'audio_completed', 'completed', 'error'],
       default: 'pending'
     },
-    errorMessage: { type: String },
+    processingError: { type: String },
   },
   { timestamps: true }
 );
 
-// Create and export the model
-export default mongoose.model<IArticle>('Article', ArticleSchema); 
+export default mongoose.model<IArticle>('Article', ArticleSchema);

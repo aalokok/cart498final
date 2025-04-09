@@ -5,8 +5,8 @@
       <p class="mt-3">Loading article...</p>
     </div>
     
-    <div v-else-if="error" class="container">
-      <b-alert show variant="danger">{{ error }}</b-alert>
+    <div v-else-if="displayError" class="container">
+      <b-alert show variant="danger">{{ displayError }}</b-alert>
       <b-button to="/" variant="primary" class="mt-3">Back to Home</b-button>
     </div>
     
@@ -17,75 +17,112 @@
       ]"></b-breadcrumb>
       
       <b-card no-body class="mb-4">
-        <div class="original-vs-transformed position-relative">
-          <b-button 
-            @click="toggleView" 
-            variant="info" 
-            class="toggle-btn position-absolute"
-            :class="{ 'transformed-active': showTransformed }"
-          >
-            {{ showTransformed ? 'View Original' : 'View Transformed' }}
-          </b-button>
-          
-          <div class="content-wrapper">
-            <!-- Original Content -->
-            <b-card-body v-show="!showTransformed" class="original">
-              <div class="source-info mb-3">
-                <span class="badge badge-secondary mr-2">{{ article.sourceName }}</span>
-                <small class="text-muted">{{ formatDate(article.publishedAt) }}</small>
+        <div class="position-relative">
+          <b-card-body>
+            <div class="article-header" :style="{ backgroundImage: `url(${article.urlToImage || 'https://via.placeholder.com/1200x400/111/222'})` }">
+              <div class="header-overlay"></div>
+              <div class="header-content">
+                <h1 class="mb-3">{{ article.title }}</h1>
+                <div class="source-info mb-3">
+                  <span class="badge mr-2" :style="{ backgroundColor: getSourceColor() }">{{ article.sourceName }}</span>
+                  <small class="text-light">{{ formatDate(article.publishedAt) }}</small>
+                </div>
               </div>
-              
-              <h2 class="mb-3">{{ article.title }}</h2>
-              
-              <div v-if="article.urlToImage" class="mb-4 text-center">
-                <b-img :src="article.urlToImage" fluid alt="Article image"></b-img>
-                <small class="text-muted d-block mt-1">Original image from source</small>
-              </div>
-              
-              <div class="article-content">
-                {{ article.content }}
-              </div>
-              
-              <div class="mt-4">
-                <a :href="article.url" target="_blank" class="btn btn-outline-primary">
-                  Read original article
-                </a>
-              </div>
-            </b-card-body>
+            </div>
             
-            <!-- Transformed Content -->
-            <b-card-body v-show="showTransformed" class="transformed">
-              <div class="source-info mb-3">
-                <span class="badge badge-danger mr-2">ACTUAL INFORMER</span>
-                <small class="text-muted">EXAGGERATED VERSION</small>
+            <div class="article-body mt-4">
+              <div class="row">
+                <div class="col-md-8">
+                  <div class="article-content">
+                    <p v-if="article.description" class="lead">{{ article.description }}</p>
+                    
+                    <!-- Content view toggle when transformed content is available -->
+                    <div v-if="article.transformedContent" class="mb-3 article-view-options">
+                      <b-button-group>
+                        <b-button 
+                          :variant="viewMode === 'original' ? 'primary' : 'outline-primary'" 
+                          @click="viewMode = 'original'"
+                        >
+                          Original
+                        </b-button>
+                        <b-button 
+                          :variant="viewMode === 'rightWing' ? 'danger' : 'outline-danger'" 
+                          @click="viewMode = 'rightWing'"
+                        >
+                          Right-Wing View
+                        </b-button>
+                      </b-button-group>
+                    </div>
+                    
+                    <!-- Display content based on viewMode -->
+                    <div v-if="article.content" class="mt-4">
+                      <template v-if="viewMode === 'original' || !article.transformedContent">
+                        <p>{{ article.content }}</p>
+                      </template>
+                      <template v-else-if="viewMode === 'rightWing' && article.transformedContent">
+                        <div class="right-wing-content">
+                          <div class="bias-indicator mb-2">
+                            <span class="badge badge-danger">Right-Wing Perspective</span>
+                          </div>
+                          <p style="white-space: pre-line">{{ article.transformedContent }}</p>
+                        </div>
+                      </template>
+                    </div>
+                    
+                    <div class="mt-4">
+                      <a :href="article.url" target="_blank" class="btn btn-outline-primary">
+                        Read original article
+                      </a>
+                      <b-button 
+                        @click="generateFullArticle" 
+                        variant="outline-secondary" 
+                        class="ml-2" 
+                        :disabled="generatingArticle || article.isAiGenerated"
+                      >
+                        <b-spinner small v-if="generatingArticle"></b-spinner>
+                        {{ article.isAiGenerated ? 'AI-Generated Article' : 'Generate Full Article' }}
+                      </b-button>
+                      <b-button 
+                        @click="rewriteWithRightWingBias" 
+                        variant="outline-danger" 
+                        class="ml-2" 
+                        :disabled="rewritingArticle || (article.transformedContent && article.politicalBias === 'right')"
+                      >
+                        <b-spinner small v-if="rewritingArticle"></b-spinner>
+                        {{ article.transformedContent && article.politicalBias === 'right' ? 'Right-Wing View Available' : 'Rewrite with Right-Wing Bias' }}
+                      </b-button>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="col-md-4">
+                  <div class="article-explanation">
+                    <h3 class="mb-3">Expert Analysis</h3>
+                    
+                    <div v-if="explanationLoading" class="text-center py-3">
+                      <b-spinner variant="info" small></b-spinner>
+                      <p class="mt-2">Generating expert analysis...</p>
+                    </div>
+                    
+                    <div v-else-if="article.explanation" class="explanation-content">
+                      <p v-html="formatExplanation(article.explanation)"></p>
+                    </div>
+                    
+                    <div v-else class="text-center py-3">
+                      <p class="text-muted">No explanation available yet</p>
+                      <b-button 
+                        @click="generateExplanation" 
+                        variant="info" 
+                        :disabled="explanationLoading"
+                      >
+                        Generate Analysis
+                      </b-button>
+                    </div>
+                  </div>
+                </div>
               </div>
-              
-              <h2 class="mb-3">{{ article.transformedTitle || 'Transformation in progress...' }}</h2>
-              
-              <div v-if="article.generatedImageUrl" class="mb-4 text-center">
-                <b-img :src="article.generatedImageUrl" fluid alt="AI-generated image"></b-img>
-                <small class="text-muted d-block mt-1">AI-generated image</small>
-              </div>
-              
-              <div v-if="article.transformedContent" class="article-content">
-                {{ article.transformedContent }}
-              </div>
-              <div v-else class="alert alert-warning">
-                Transformation in progress...
-                <b-button v-if="!article.isProcessed" @click="processArticle(article._id)" variant="primary" size="sm" class="ml-2">
-                  Transform Now
-                </b-button>
-              </div>
-              
-              <div v-if="article.audioUrl" class="mt-4">
-                <h5>Listen to this story:</h5>
-                <audio controls class="w-100">
-                  <source :src="article.audioUrl" type="audio/mpeg">
-                  Your browser does not support the audio element.
-                </audio>
-              </div>
-            </b-card-body>
-          </div>
+            </div>
+          </b-card-body>
         </div>
       </b-card>
       
@@ -100,76 +137,277 @@
 </template>
 
 <script>
-import { mapState, mapGetters, mapActions } from 'vuex'
+import { mapState } from "vuex";
+import apiService from "@/services/api";
 
 export default {
-  name: 'ArticleDetail',
+  name: "ArticleDetail",
   data() {
     return {
-      showTransformed: false
-    }
+      article: null,
+      explanationLoading: false,
+      generatingArticle: false,
+      rewritingArticle: false,
+      viewMode: 'original',
+      localError: null
+    };
   },
   computed: {
     ...mapState({
       loading: state => state.loading,
       error: state => state.error
     }),
-    ...mapGetters({
-      article: 'getCurrentArticle'
-    })
+    articleId() {
+      return this.$route.params.id;
+    },
+    displayError() {
+      return this.localError || this.error;
+    }
   },
   methods: {
-    ...mapActions([
-      'fetchArticleById',
-      'processArticle'
-    ]),
-    toggleView() {
-      this.showTransformed = !this.showTransformed
-    },
     formatDate(date) {
-      if (!date) return ''
-      return new Date(date).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      })
+      if (!date) return "";
+      return new Date(date).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+      });
+    },
+    getSourceColor() {
+      // Generate a deterministic color based on source name
+      if (!this.article || !this.article.sourceName) return "#007bff";
+      
+      const hash = this.article.sourceName.split("").reduce((acc, char) => {
+        return char.charCodeAt(0) + ((acc << 5) - acc);
+      }, 0);
+      
+      const hue = Math.abs(hash % 360);
+      return `hsl(${hue}, 70%, 50%)`;
+    },
+    formatExplanation(text) {
+      // Format the explanation with paragraph breaks
+      if (!text) return '';
+      return text.split('\n\n').map(para => `<p>${para}</p>`).join('');
+    },
+    // Use the new API service
+    async fetchArticle() {
+      try {
+        // Use the dedicated API service
+        const response = await apiService.articles.getById(this.articleId);
+        
+        if (response.data && response.data.success) {
+          this.article = response.data.data;
+          console.log('Article data received:', this.article);
+          
+          // Check if the article has transformed content with right-wing bias and set view mode accordingly
+          if (this.article.transformedContent && this.article.politicalBias === 'right') {
+            console.log('Article has right-wing transformed content');
+          }
+        } else {
+          this.localError = "Failed to load article data";
+        }
+      } catch (error) {
+        console.error("Error fetching article:", error);
+        this.localError = error.message || "Error loading article";
+      }
+    },
+    // Use the new API service for explanation generation
+    async generateExplanation() {
+      if (this.explanationLoading) return;
+      
+      this.explanationLoading = true;
+      this.localError = null;
+      
+      try {
+        const response = await apiService.articles.generateExplanation(this.articleId);
+        
+        if (response.data && response.data.success && response.data.data) {
+          // Update the article with the new explanation
+          if (!this.article) {
+            await this.fetchArticle();
+          } else {
+            this.article.explanation = response.data.data.explanation;
+          }
+        } else {
+          this.localError = "Failed to generate explanation. Try again later.";
+        }
+      } catch (error) {
+        console.error("Error generating explanation:", error);
+        this.localError = error.message || "Error generating explanation";
+      } finally {
+        this.explanationLoading = false;
+      }
+    },
+    
+    // Generate a full article from the headline using OpenAI
+    async generateFullArticle() {
+      if (this.generatingArticle) return;
+      
+      this.generatingArticle = true;
+      this.localError = null;
+      
+      try {
+        const response = await apiService.articles.generateFullArticle(this.articleId);
+        
+        if (response.data && response.data.success && response.data.data) {
+          // Update the article with the new content
+          this.article = response.data.data;
+        } else {
+          this.localError = "Failed to generate article. Try again later.";
+        }
+      } catch (error) {
+        console.error("Error generating full article:", error);
+        this.localError = error.message || "Error generating full article";
+      } finally {
+        this.generatingArticle = false;
+      }
+    },
+    
+    // Rewrite the article with right-wing bias using OpenAI
+    async rewriteWithRightWingBias() {
+      this.rewritingArticle = true;
+      
+      try {
+        const response = await apiService.articles.rewriteWithRightWingBias(this.articleId);
+        
+        if (response.data.success) {
+          // Update the article with the rewritten content
+          this.article = response.data.data;
+          
+          // Switch view to right-wing perspective
+          this.viewMode = 'rightWing';
+          
+          this.$bvToast.toast('Article rewritten with right-wing perspective', {
+            title: 'Success',
+            variant: 'success',
+            solid: true
+          });
+        } else {
+          throw new Error(response.data.error || 'Failed to rewrite the article');
+        }
+      } catch (error) {
+        console.error('Error rewriting article:', error);
+        this.$bvToast.toast(error.message || 'Failed to rewrite the article', {
+          title: 'Error',
+          variant: 'danger',
+          solid: true
+        });
+      } finally {
+        this.rewritingArticle = false;
+      }
+    },
+    handleHashChange() {
+      // Re-fetch article when URL hash changes
+      const newId = this.$route.params.id;
+      if (newId && newId !== this.articleId) {
+        console.log('Hash changed, fetching new article:', newId);
+        this.fetchArticle();
+      }
     }
   },
   mounted() {
-    const articleId = this.$route.params.id
-    this.fetchArticleById(articleId)
+    console.log('ArticleDetail mounted with ID:', this.articleId);
+    this.fetchArticle();
+    
+    // Add event listener for direct navigation
+    window.addEventListener('hashchange', this.handleHashChange);
+  },
+  beforeUnmount() {
+    // Remove event listener
+    window.removeEventListener('hashchange', this.handleHashChange);
   }
-}
+};
 </script>
 
 <style scoped>
-.original-vs-transformed {
-  min-height: 400px;
+.article-header {
+  position: relative;
+  background-size: cover;
+  background-position: center;
+  height: 300px;
+  border-radius: 8px;
+  overflow: hidden;
+  margin: -1.25rem -1.25rem 0;
 }
 
-.toggle-btn {
-  right: 1rem;
-  top: 1rem;
-  z-index: 10;
-  transition: all 0.3s ease;
+.header-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.8) 80%);
+  z-index: 1;
 }
 
-.toggle-btn.transformed-active {
-  background-color: #dc3545;
-  border-color: #dc3545;
+.header-content {
+  position: relative;
+  z-index: 2;
+  color: white;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  height: 100%;
+}
+
+.header-content h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+}
+
+.article-body {
+  padding: 20px 0;
 }
 
 .article-content {
-  white-space: pre-line;
+  line-height: 1.7;
+}
+
+.article-explanation {
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.explanation-content {
   line-height: 1.6;
+  font-size: 15px;
 }
 
-.transformed {
-  background-color: rgba(255, 240, 245, 0.3);
+.explanation-content p {
+  margin-bottom: 15px;
 }
 
-.source-info {
-  display: flex;
-  align-items: center;
+.bias-indicator {
+  margin-bottom: 10px;
 }
-</style> 
+
+.right-wing-content {
+  padding: 15px;
+  background-color: #fff8f8;
+  border-left: 4px solid #dc3545;
+  margin-bottom: 20px;
+}
+
+.article-view-options {
+  margin: 15px 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .article-header {
+    height: 200px;
+  }
+  
+  .header-content h1 {
+    font-size: 1.8rem;
+  }
+  
+  .article-explanation {
+    margin-top: 30px;
+  }
+}
+</style>

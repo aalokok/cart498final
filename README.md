@@ -20,7 +20,13 @@ A web application that dynamically fetches real current news stories and uses ge
 
 1. Clone the repository
 2. Install dependencies: `npm install`
-3. Set up environment variables in `.env` file (see `.env.example`)
+3. Set up environment variables:
+   - Copy `.env.example` to `.env`
+   - Add your API keys:
+     - Get an OpenAI API key from [OpenAI Platform](https://platform.openai.com)
+     - Get a News API key from [NewsAPI](https://newsapi.org)
+     - Get an ElevenLabs API key from [ElevenLabs](https://elevenlabs.io)
+   - Never commit your `.env` file or share your API keys
 4. Run in development mode: `npm run dev`
 5. Build for production: `npm run build`
 6. Run in production mode: `npm start`

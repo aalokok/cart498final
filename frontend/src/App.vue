@@ -1,72 +1,180 @@
 <template>
-  <div id="app">
-    <b-navbar toggleable="md" type="dark" variant="dark">
-      <b-container>
-        <b-navbar-brand to="/">The Actual Informer</b-navbar-brand>
-        
-        <b-navbar-toggle target="nav-collapse"></b-navbar-toggle>
-        
-        <b-collapse id="nav-collapse" is-nav>
-          <b-navbar-nav class="ml-auto">
-            <b-nav-item to="/" exact>Home</b-nav-item>
-            <b-nav-item to="/about">About</b-nav-item>
-          </b-navbar-nav>
-        </b-collapse>
-      </b-container>
-    </b-navbar>
-    
-    <main>
-      <router-view/>
-    </main>
-    
-    <footer class="bg-dark text-white py-4 mt-5">
-      <b-container>
-        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center">
-          <div class="mb-3 mb-md-0">
-            <h5>The Actual Informer</h5>
-            <p class="mb-0 small">A satirical exploration of AI-generated media</p>
-          </div>
-          
-          <div class="text-center text-md-right">
-            <p class="mb-0 small">&copy; {{ new Date().getFullYear() }} The Actual Informer</p>
-            <p class="mb-0 small">This is a student project - not a real news site</p>
+  <div id="app" :style="{ background: backgroundColor }">
+    <!-- Header -->
+    <div class="header"></div>
+
+    <!-- Marquee text bar -->
+    <div class="marquee-container">
+      <div class="marquee-content">
+        <p>
+          TRUST THE ACTUAL INFORMER – YOUR ONLY SOURCE OF TRUE, UNBIASED NEWS –
+          TRUST THE ACTUAL INFORMER – YOUR ONLY SOURCE OF TRUE, UNBIASED NEWS –
+          TRUST THE ACTUAL INFORMER – YOUR ONLY SOURCE OF TRUE, UNBIASED NEWS
+        </p>
+      </div>
+    </div>
+
+    <!-- Main content -->
+    <div class="main-content">
+      <!-- Left sidebar with logo and categories -->
+      <div class="sidebar">
+        <div class="logo-container" @click="loadAllArticles">
+          <img src="@/assets/logo.svg" alt="The Actual Informer" class="logo" />
+        </div>
+
+        <div class="categories">
+          <div
+            class="category"
+            v-for="category in categories"
+            :key="category.apiCategory"
+            @click="loadCategoryArticles(category)"
+          >
+            {{ category.name }}
           </div>
         </div>
-      </b-container>
-    </footer>
+
+        <div class="toggle-button">
+          <button>SUBSCRIBE</button>
+        </div>
+
+        <!-- Rewrite Mode Toggle -->
+        <div class="rewrite-toggle">
+          <button 
+            :class="{ active: currentMode === 'left' }" 
+            @click="setMode('left')"
+          >
+            Rewrite Left
+          </button>
+          <button 
+            :class="{ active: currentMode === 'right' }" 
+            @click="setMode('right')"
+          >
+            Rewrite Right
+          </button>
+        </div>
+      </div>
+
+      <!-- Main area with audio player and articles -->
+      <div class="content-area">
+        <!-- Audio player -->
+        <div class="audio-player">
+          <button class="play-button">▶</button>
+          <div class="audio-timeline">
+            <div class="audio-progress"></div>
+          </div>
+          <div class="live-button" :class="{ flashing: true }">
+            <span>LIVE</span>
+          </div>
+        </div>
+
+        <!-- Loading indicator -->
+        <div v-if="loading" class="loading-indicator">
+          <p>Loading latest news...</p>
+        </div>
+
+        <!-- Error message -->
+        <div v-if="error" class="error-message">
+          <p>{{ error }}</p>
+        </div>
+
+        <!-- Router outlet replaces the direct article grid -->
+        <router-view />
+      </div>
+    </div>
   </div>
 </template>
 
-<script>
-export default {
-  name: 'App'
-}
+<script lang="ts">
+import { defineComponent, ref, computed, onMounted } from "vue";
+import { useStore } from "vuex";
+import { useRouter } from "vue-router";
+
+export default defineComponent({
+  name: "App",
+  setup() {
+    const store = useStore();
+    const router = useRouter();
+
+    // State
+    const backgroundColor = ref("#ffffff");
+    const categories = ref([
+      { name: "World", color: "#ff5252", apiCategory: "general" },
+      { name: "Politics", color: "#7c4dff", apiCategory: "politics" },
+      { name: "Technology", color: "#448aff", apiCategory: "technology" },
+      { name: "Health", color: "#18ffff", apiCategory: "health" },
+      { name: "Business", color: "#ff9100", apiCategory: "business" },
+      { name: "Sports", color: "#ff3d00", apiCategory: "sports" },
+      { name: "Entertainment", color: "#ff3d00", apiCategory: "entertainment" },
+    ]);
+    const statusColors = ref([
+      "#ff5252", "#7c4dff", "#448aff", "#18ffff", "#76ff03", "#ffea00", "#ff9100", "#ff3d00", "#d500f9",
+    ]);
+
+    // Computed properties
+    const loading = computed(() => store.state.loading as boolean);
+    const error = computed(() => store.state.error as string | null);
+
+    // Get current rewrite mode from store
+    const currentMode = computed(() => store.getters.getCurrentRewriteMode);
+
+    // Method to set rewrite mode in store
+    const setMode = (mode: string) => {
+      console.log(`[App.vue] Setting rewrite mode to: ${mode}`);
+      store.dispatch('setRewriteMode', mode);
+    };
+
+    // Methods
+    const loadAllArticles = async () => {
+      console.log('[App.vue] Logo clicked, navigating home.');
+      router.push('/');
+    };
+
+    const loadCategoryArticles = async (category: any) => {
+      console.log(`[App.vue] Category ${category.name} clicked.`);
+      router.push('/');
+    };
+
+    return {
+      backgroundColor,
+      categories,
+      loading,
+      error,
+      loadAllArticles,
+      loadCategoryArticles,
+      setMode,
+      currentMode,
+    };
+  },
+});
 </script>
 
 <style>
-body {
-  min-height: 100vh;
-  font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background-color: #f8f9fa;
+.articles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
-main {
-  min-height: calc(100vh - 200px);
+.rewrite-toggle button {
+  padding: 8px 12px;
+  margin-left: 5px;
+  border: 1px solid #ccc;
+  background-color: #f0f0f0;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.3s, border-color 0.3s;
 }
 
-#app {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
+.rewrite-toggle button:hover {
+  background-color: #e0e0e0;
 }
 
-main {
-  flex: 1;
-}
-
-.btn {
-  font-weight: 500;
+.rewrite-toggle button.active {
+  background-color: #007bff;
+  color: white;
+  border-color: #0056b3;
 }
 </style>
