@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 import Home from '../views/Home.vue'
+import RewriteView from '../views/RewriteView.vue'
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -10,7 +11,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/rewrite/:id',
     name: 'RewriteView',
-    component: () => import(/* webpackChunkName: "rewrite-view" */ '../views/RewriteView.vue'),
+    component: RewriteView,
     props: true // Pass route params (like :id) as props to the component
   },
   {
@@ -18,11 +19,6 @@ const routes: Array<RouteRecordRaw> = [
     name: 'ArticleDetail',
     component: () => import(/* webpackChunkName: "article-detail" */ '../views/ArticleDetail.vue'),
     props: true // This enables passing route params as props
-  },
-  {
-    path: '/about',
-    name: 'About',
-    component: () => import(/* webpackChunkName: "about" */ '../views/About.vue')
   },
   {
     path: '/:pathMatch(.*)*',

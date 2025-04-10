@@ -2,7 +2,7 @@
 body {
   margin: 0;
   padding: 0;
-  font-family: "Averia Serif Libre", serif;
+  font-family: "Space Mono", monospace, sans-serif; /* Update body font */
   color: #fff;
   overflow-x: hidden;
 }
@@ -16,11 +16,11 @@ body {
 
 /* Marquee text bar */
 .marquee-container {
-  background-color: #ff0000;
+  background-color: #db1e05;
   color: white;
   overflow: hidden;
   white-space: nowrap;
-  height: 24px;
+  padding: 15px 0px;
   width: 100%;
 }
 
@@ -34,7 +34,7 @@ body {
   display: inline-block;
   margin: 0;
   padding: 0;
-  font-size: 16px;
+  font-size: 14px;
   line-height: 24px;
 }
 
@@ -58,7 +58,7 @@ body {
   width: 180px;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid #333;
+  border-right: 1px solid #000;
   background: white;
 }
 
@@ -67,7 +67,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid #000;
   cursor: pointer;
 }
 
@@ -77,17 +77,19 @@ body {
 }
 
 .category {
-  padding: 15px 10px;
-  border-bottom: 1px solid #333;
-  font-size: 10px;
-  text-align: center;
+  padding: 25px 25px;
+  border-bottom: 1px solid #000;
+  font-size: 14px;
+  text-transform: uppercase;
+  text-align: left;
   cursor: pointer;
-  transition: background-color 0.3s;
-  color: black;
+  transition: all 0.3s;
+  color: #000;
 }
 
-.category:hover {
-  background-color: #333;
+.category:hover:not(.active-category) {
+  background-color: #000;
+  color: #fff;
 }
 
 .toggle-button {
@@ -96,7 +98,7 @@ body {
 }
 
 .toggle-button button {
-  background-color: #ff0000;
+  background-color: #db1e05;
   color: white;
   border: none;
   padding: 8px 12px;
@@ -134,7 +136,7 @@ body {
 .audio-timeline {
   flex: 1;
   height: 6px;
-  background-color: #333;
+  background-color: #000;
   border-radius: 3px;
   position: relative;
 }
@@ -150,7 +152,7 @@ body {
 .live-button {
   margin-left: 10px;
   padding: 5px 10px;
-  background-color: #ff0000;
+  background-color: #db1e05;
   border-radius: 4px;
   font-size: 12px;
   font-weight: bold;
@@ -229,9 +231,9 @@ body {
   justify-content: center;
   align-items: center;
   height: 200px;
-  font-family: 'Averia Serif Libre', serif;
+  font-family: "Averia Serif Libre", serif;
   font-size: 1.5rem;
-  color: #333;
+  color: #000;
 }
 
 /* Error message */
@@ -240,7 +242,7 @@ body {
   justify-content: center;
   align-items: center;
   height: 200px;
-  font-family: 'Averia Serif Libre', serif;
+  font-family: "Averia Serif Libre", serif;
   font-size: 1.5rem;
   color: #ff5252;
   text-align: center;
@@ -262,11 +264,11 @@ body {
 }
 
 .refresh-button button {
-  background-color: #333;
+  background-color: #000;
   color: white;
   border: none;
   padding: 10px 20px;
-  font-family: 'Averia Serif Libre', serif;
+  font-family: "Averia Serif Libre", serif;
   font-size: 1rem;
   cursor: pointer;
   transition: background-color 0.3s;
@@ -291,7 +293,7 @@ body {
     width: 100%;
     height: auto;
     border-right: none;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid #000;
     background-color: white;
   }
 

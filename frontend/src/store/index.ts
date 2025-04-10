@@ -38,6 +38,7 @@ interface State {
   error: string | null;
   rewriteStates: Record<string, RewriteRequestState>;
   currentRewriteMode: RewriteMode;
+  selectedCategory: string | null;
 }
 
 const API_URL = process.env.VUE_APP_API_URL || "http://localhost:3000/api";
@@ -51,6 +52,7 @@ export default createStore<State>({
     error: null,
     rewriteStates: {},
     currentRewriteMode: 'right',
+    selectedCategory: null, // Default to null (no category selected)
   },
   mutations: {
     SET_ARTICLES(state, articles: Article[]) {
@@ -103,6 +105,14 @@ export default createStore<State>({
       // state.rewriteStates = {}; 
       console.log(`[Store Mutation] Rewrite mode set to: ${mode}`);
     },
+    RESET_FILTERED_ARTICLES(state) {
+      state.filteredArticles = state.articles; // Reset filtered to show all
+      console.log('[Store Mutation] Filtered articles reset.');
+    },
+    SET_SELECTED_CATEGORY(state, categoryId: string | null) {
+      state.selectedCategory = categoryId;
+      console.log(`[Store Mutation] Selected category set to: ${categoryId}`);
+    }
   },
   actions: {
     async fetchArticles({ commit }, category = "general") {
@@ -125,108 +135,10 @@ export default createStore<State>({
         commit("SET_LOADING", false);
       }
     },
-    async fetchAllArticlesAtOnce({ commit }) {
-      commit("SET_LOADING", true);
-      commit("CLEAR_ERROR");
-
-      try {
-        // First try to get articles from MongoDB directly via GET request
-        console.log("Checking for existing articles in MongoDB...");
-
-        const existingArticlesResponse = await axios.get(
-          `${API_URL}/articles`,
-          {
-            params: { limit: 20 },
-            timeout: 10000,
-          }
-        );
-
-        // If we have articles in MongoDB, use those
-        if (
-          existingArticlesResponse.data &&
-          existingArticlesResponse.data.data &&
-          existingArticlesResponse.data.data.length > 0
-        ) {
-          console.log(
-            `Found ${existingArticlesResponse.data.data.length} existing articles in MongoDB`
-          );
-          commit("SET_ARTICLES", existingArticlesResponse.data.data);
-          commit("SET_FILTERED_ARTICLES", existingArticlesResponse.data.data);
-
-          return existingArticlesResponse.data;
-        }
-
-        // No existing articles or not enough, make API call to fetch new ones
-        console.log(
-          "No articles in MongoDB or not enough, fetching from News API..."
-        );
-        const response = await axios.post(
-          `${API_URL}/articles/fetch-all`,
-          null,
-          {
-            params: {
-              pageSize: 100,
-              language: "en",
-              timeframe: "24h",
-            },
-            timeout: 30000, // 30 second timeout
-          }
-        );
-
-        if (
-          response.data &&
-          response.data.data &&
-          response.data.data.length > 0
-        ) {
-          console.log(
-            `Fetched ${response.data.data.length} new articles from API and stored in MongoDB`
-          );
-          commit("SET_ARTICLES", response.data.data);
-          commit("SET_FILTERED_ARTICLES", response.data.data);
-        } else {
-          throw new Error("No articles returned from API");
-        }
-
-        return response.data;
-      } catch (error: any) {
-        console.error("Error fetching all articles at once:", error);
-
-        // Try to get any existing articles from the database as fallback (one more try)
-        try {
-          const fallbackResponse = await axios.get(`${API_URL}/articles`, {
-            params: { limit: 20 },
-          });
-
-          if (
-            fallbackResponse.data &&
-            fallbackResponse.data.data &&
-            fallbackResponse.data.data.length > 0
-          ) {
-            console.log(
-              `Using ${fallbackResponse.data.data.length} existing articles from database as fallback`
-            );
-            commit("SET_ARTICLES", fallbackResponse.data.data);
-            commit("SET_FILTERED_ARTICLES", fallbackResponse.data.data);
-            return fallbackResponse.data;
-          } else {
-            commit(
-              "SET_ERROR",
-              "No articles available. Please try again later."
-            );
-          }
-        } catch (fallbackError) {
-          commit(
-            "SET_ERROR",
-            "Failed to fetch articles. Please try again later."
-          );
-        }
-
-        return null;
-      } finally {
-        commit("SET_LOADING", false);
-      }
+    async fetchAllArticlesAtOnce({ commit, dispatch }) {
+      // Just use the new fetchAllArticlesAtOnce method
+      return dispatch("fetchAllArticlesAtOnce");
     },
-
     async fetchAllCategoriesArticles({ commit, dispatch }) {
       // Just use the new fetchAllArticlesAtOnce method
       return dispatch("fetchAllArticlesAtOnce");
@@ -457,6 +369,13 @@ export default createStore<State>({
       commit('SET_REWRITE_MODE', mode);
       // Potentially trigger refetch or clear displayed rewrites here if needed
     },
+    showAllArticles({ commit }) {
+      commit('SET_SELECTED_CATEGORY', null); // Reset category to null when showing all
+      commit('RESET_FILTERED_ARTICLES');
+    },
+    setSelectedCategory({ commit }, categoryId: string | null) {
+      commit('SET_SELECTED_CATEGORY', categoryId);
+    }
   },
   getters: {
     getArticles: (state) => state.articles,
@@ -474,5 +393,8 @@ export default createStore<State>({
     getCurrentRewriteMode: (state): RewriteMode => {
       return state.currentRewriteMode;
     },
+    getSelectedCategory(state): string | null {
+      return state.selectedCategory;
+    }
   },
 });

@@ -12,13 +12,11 @@
       <div class="gradient-overlay"></div>
       <div class="hover-overlay"></div>
       <div class="article-status">
+        <!-- Display a dot colored based on the article's category -->
         <div
+          v-if="categoryColor" 
           class="status-dot"
-          :style="{ backgroundColor: statusColors[0] }"
-        ></div>
-        <div
-          class="status-dot"
-          :style="{ backgroundColor: statusColors[1] }"
+          :style="{ backgroundColor: categoryColor }"
         ></div>
       </div>
       <div class="article-content">
@@ -51,9 +49,9 @@ export default {
       type: Object,
       required: true,
     },
-    statusColors: {
-      type: Array,
-      default: () => ['#ff5252', '#7c4dff']
+    categoryColors: { // Renamed prop to receive category->color map
+      type: Object,
+      required: true
     }
   },
   setup(props) {
@@ -79,6 +77,14 @@ export default {
     rewriteState() {
       // Use the mapped getter, passing the article's ID
       return this.getRewriteState(this.article._id);
+    },
+    categoryColor() {
+      // Find the color for the article's category from the provided map
+      // Assumes article.category is a string like 'politics', 'technology', etc.
+      if (this.article.category && this.categoryColors[this.article.category]) {
+        return this.categoryColors[this.article.category];
+      }
+      return null; // Return null if no category or color found
     },
     displayTitle() {
       return this.article.isProcessed && this.article.transformedTitle
@@ -182,6 +188,7 @@ export default {
 
 .article-content h3 {
   margin: 0 0 10px;
+  font-family: "Averia Serif Libre", serif; /* Set title font */
   font-size: 1.2rem;
   font-weight: 600;
   line-height: 1.3;
