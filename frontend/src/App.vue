@@ -27,6 +27,14 @@
             class="category"
             v-for="category in categories"
             :key="category.apiCategory"
+            :class="{
+              'active-category': category.apiCategory === selectedCategory,
+            }"
+            :style="
+              category.apiCategory === selectedCategory
+                ? { backgroundColor: category.color }
+                : {}
+            "
             @click="loadCategoryArticles(category)"
           >
             {{ category.name }}
@@ -39,14 +47,14 @@
 
         <!-- Rewrite Mode Toggle -->
         <div class="rewrite-toggle">
-          <button 
-            :class="{ active: currentMode === 'left' }" 
+          <button
+            :class="{ active: currentMode === 'left' }"
             @click="setMode('left')"
           >
             Rewrite Left
           </button>
-          <button 
-            :class="{ active: currentMode === 'right' }" 
+          <button
+            :class="{ active: currentMode === 'right' }"
             @click="setMode('right')"
           >
             Rewrite Right
@@ -78,14 +86,17 @@
         </div>
 
         <!-- Router outlet replaces the direct article grid -->
-        <router-view />
+        <router-view
+          v-bind="{ categoryColors: categoryColorMap }"
+          class="main-content"
+        />
       </div>
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, onMounted } from "vue";
+import { defineComponent, ref, computed, watch, onMounted } from "vue";
 import { useStore } from "vuex";
 import { useRouter } from "vue-router";
 
@@ -96,23 +107,51 @@ export default defineComponent({
     const router = useRouter();
 
     // State
-    const backgroundColor = ref("#ffffff");
     const categories = ref([
-      { name: "World", color: "#ff5252", apiCategory: "general" },
+      { name: "World", color: "#AEFA58", apiCategory: "general" },
       { name: "Politics", color: "#7c4dff", apiCategory: "politics" },
       { name: "Technology", color: "#448aff", apiCategory: "technology" },
       { name: "Health", color: "#18ffff", apiCategory: "health" },
       { name: "Business", color: "#ff9100", apiCategory: "business" },
       { name: "Sports", color: "#ff3d00", apiCategory: "sports" },
-      { name: "Entertainment", color: "#ff3d00", apiCategory: "entertainment" },
-    ]);
-    const statusColors = ref([
-      "#ff5252", "#7c4dff", "#448aff", "#18ffff", "#76ff03", "#ffea00", "#ff9100", "#ff3d00", "#d500f9",
+      { name: "Entertainment", color: "#FA58A9", apiCategory: "entertainment" },
     ]);
 
     // Computed properties
     const loading = computed(() => store.state.loading as boolean);
     const error = computed(() => store.state.error as string | null);
+
+    // Get selected category ID from store
+    const selectedCategory = computed(() => store.getters.getSelectedCategory);
+
+    // Compute background color based on selected category
+    const backgroundColor = computed(() => {
+      if (selectedCategory.value === null) {
+        return "#ffffff"; // White background for 'All Articles'
+      }
+      const activeCategory = categories.value.find(
+        (cat) => cat.apiCategory === selectedCategory.value
+      );
+      return activeCategory ? activeCategory.color : "#ffffff"; // Default to white if category color not found
+    });
+
+    // Create a map of category API names to colors for easy lookup
+    const categoryColorMap = computed(() => {
+      return categories.value.reduce((map, category) => {
+        map[category.apiCategory] = category.color;
+        return map;
+      }, {} as Record<string, string>);
+    });
+
+    // Watch for changes in backgroundColor and update the body style
+    watch(backgroundColor, (newColor) => {
+      document.body.style.backgroundColor = newColor;
+    });
+
+    // Set initial background color when component mounts
+    onMounted(() => {
+      document.body.style.backgroundColor = backgroundColor.value;
+    });
 
     // Get current rewrite mode from store
     const currentMode = computed(() => store.getters.getCurrentRewriteMode);
@@ -120,29 +159,36 @@ export default defineComponent({
     // Method to set rewrite mode in store
     const setMode = (mode: string) => {
       console.log(`[App.vue] Setting rewrite mode to: ${mode}`);
-      store.dispatch('setRewriteMode', mode);
+      store.dispatch("setRewriteMode", mode);
     };
 
     // Methods
     const loadAllArticles = async () => {
-      console.log('[App.vue] Logo clicked, navigating home.');
-      router.push('/');
+      console.log(
+        "[App.vue] Logo clicked, dispatching showAllArticles and navigating home."
+      );
+      store.dispatch("showAllArticles"); // Dispatch action to show all articles
+      router.push("/");
     };
 
     const loadCategoryArticles = async (category: any) => {
       console.log(`[App.vue] Category ${category.name} clicked.`);
-      router.push('/');
+      store.dispatch("setSelectedCategory", category.apiCategory); // Set selected category
+      store.dispatch("fetchArticlesByCategory", category.apiCategory);
+      router.push("/"); // Navigate home to show the filtered list
     };
 
     return {
-      backgroundColor,
       categories,
       loading,
       error,
       loadAllArticles,
       loadCategoryArticles,
       setMode,
+      selectedCategory,
       currentMode,
+      backgroundColor,
+      categoryColorMap,
     };
   },
 });
@@ -176,5 +222,9 @@ export default defineComponent({
   background-color: #007bff;
   color: white;
   border-color: #0056b3;
+}
+
+.category.active-category {
+  font-weight: bold;
 }
 </style>

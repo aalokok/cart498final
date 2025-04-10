@@ -94,6 +94,7 @@ export default {
 }
 h2 {
   margin-bottom: 1rem;
+  font-family: "Averia Serif Libre", serif; /* Set title font */
   color: #343a40; /* Slightly darker heading color */
 }
 </style>
