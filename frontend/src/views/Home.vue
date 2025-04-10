@@ -61,7 +61,7 @@ export default {
       error: state => state.error
     }),
     ...mapGetters({
-      articles: 'getArticles'
+      articles: 'getFilteredArticles'
     })
   },
   methods: {

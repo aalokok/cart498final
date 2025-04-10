@@ -11,6 +11,7 @@ import {
   rewriteArticleExtremeLeft,
   processPendingArticles,
   generateFullArticle,
+  getBreakingNewsAudio
 } from '../controllers/articleController';
 
 const router = express.Router();
@@ -23,6 +24,9 @@ router.get('/all', getAllArticlesNoLimit);
 
 // Get a single article by ID
 router.get('/:id', getArticleById);
+
+// Generate and stream breaking news audio
+router.get('/tts/breaking-news', getBreakingNewsAudio);
 
 // Generate explanation for an article
 router.post('/:id/explanation', generateArticleExplanation);

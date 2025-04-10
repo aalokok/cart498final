@@ -3,6 +3,7 @@ import { NewsService } from '../services/NewsService';
 import ArticleModel, { IArticle } from '../models/Article'; // Ensure IArticle is imported
 import { ContentTransformationService } from '../services/ContentTransformationService';
 import { OpenAIService } from '../services/OpenAIService';
+import { ElevenLabsService } from '../services/ElevenLabsService';
 import { ApiError } from '../utils/error';
 import { PoliticalBias } from '../models/Article';
 import mongoose from 'mongoose';
@@ -10,6 +11,7 @@ import mongoose from 'mongoose';
 const newsService = new NewsService();
 const contentTransformationService = new ContentTransformationService();
 const openAIService = new OpenAIService();
+const elevenLabsService = new ElevenLabsService();
 
 // Fetch all articles from database
 export const getAllArticles = async (req: Request, res: Response, next: NextFunction) => {
@@ -432,3 +434,53 @@ export const rewriteArticleExtremeLeft = async (
      next(error); // Pass error to the global error handler
    }
  };
+
+// Generate breaking news audio announcement
+export const getBreakingNewsAudio = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    console.log('[getBreakingNewsAudio] Request received for breaking news audio.');
+
+    // 1. Get a random headline
+    const headline = await newsService.getRandomArticleHeadline();
+    console.log(`[getBreakingNewsAudio] Using headline: "${headline}"`);
+
+    // 2. Prepare the text for TTS
+    const textToSpeak = `Breaking news: ${headline}`;
+
+    // 3. Generate the audio stream from ElevenLabs
+    console.log('[getBreakingNewsAudio] Requesting audio stream from ElevenLabs...');
+    const audioStream = await elevenLabsService.generateSpeechStream(textToSpeak);
+    console.log('[getBreakingNewsAudio] Received audio stream from ElevenLabs.');
+
+    // 4. Set response headers for audio streaming
+    res.setHeader('Content-Type', 'audio/mpeg');
+    // res.setHeader('Accept-Ranges', 'bytes'); // Optional, might not be needed for simple playback
+
+    // 5. Pipe the audio stream directly to the response
+    audioStream.pipe(res);
+
+    // Handle stream events for logging/cleanup
+    audioStream.on('end', () => {
+      console.log('[getBreakingNewsAudio] Audio stream finished.');
+    });
+    audioStream.on('error', (streamError) => {
+      console.error('[getBreakingNewsAudio] Error during audio stream piping:', streamError);
+      // Try to send an error response if headers not already sent
+      if (!res.headersSent) {
+         // Avoid setting status/headers again if piping already started
+         // Let the global error handler catch this if possible,
+         // otherwise the client connection might just hang/close.
+         // We can pass a simplified error.
+         next(new ApiError(500, 'Error streaming audio data.'));
+      } else {
+         // If headers are sent, we can't send a JSON error. Log it.
+         console.error('[getBreakingNewsAudio] Cannot send error response, headers already sent.');
+      }
+    });
+
+  } catch (error) {
+    console.error('[getBreakingNewsAudio] Error generating breaking news audio:', error);
+    // Ensure errors from service (e.g., API key missing) are passed
+    next(error); 
+  }
+};

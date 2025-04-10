@@ -391,7 +391,7 @@ export class NewsService {
               }
             });
 
-          // Fetch back the articles that were successfully saved or already existed
+          // Fetch back the articles that were just attempted to be saved (including ones that might have failed due to duplication)
           savedArticles = await ArticleModel.find({ url: { $in: articleUrls } }).sort({ publishedAt: -1 }).lean();
           console.log(`Retrieved ${savedArticles.length} articles after saving.`);
           
@@ -483,6 +483,35 @@ export class NewsService {
     } catch (error: any) {
       console.error('Error fetching pending articles:', error.message);
       throw new ApiError(500, `Failed to fetch pending articles: ${error.message}`);
+    }
+  }
+
+  /**
+   * Retrieves the title of a single random article from the database.
+   * Uses MongoDB aggregation with $sample for efficiency.
+   * @returns The title of a random article, or a default message if none found.
+   */
+  async getRandomArticleHeadline(): Promise<string> {
+    try {
+      console.log('[NewsService] Attempting to fetch a random article headline...');
+      // Use aggregation pipeline with $sample to get 1 random document efficiently
+      const randomArticles = await ArticleModel.aggregate([
+        { $match: { title: { $ne: null, $ne: "" } } }, // Ensure title exists and is not empty
+        { $sample: { size: 1 } }, // Get 1 random document
+        { $project: { title: 1, _id: 0 } } // Only project the title field
+      ]).exec();
+
+      if (randomArticles.length > 0 && randomArticles[0].title) {
+        console.log(`[NewsService] Found random headline: "${randomArticles[0].title}"`);
+        return randomArticles[0].title;
+      } else {
+        console.warn('[NewsService] No articles found or random article has no title.');
+        return "No headlines available at the moment."; // Default message
+      }
+    } catch (error) {
+      console.error('[NewsService] Error fetching random article headline:', error);
+      // Optionally rethrow or return a specific error message
+      throw new ApiError(500, 'Failed to fetch random article headline from database.');
     }
   }
 
