@@ -6,7 +6,8 @@ export const env = {
   // Server Configuration
   NODE_ENV: process.env.NODE_ENV || 'development',
   PORT: parseInt(process.env.PORT || '3000', 10),
-  
+  LOG_LEVEL: process.env.LOG_LEVEL, // Optional log level (e.g., 'info', 'debug')
+
   // Database Configuration
   MONGODB_URI: process.env.MONGODB_URI || 'mongodb://localhost:27017/actual-informer',
   

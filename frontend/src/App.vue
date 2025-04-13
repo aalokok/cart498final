@@ -41,23 +41,19 @@
           </div>
         </div>
 
-        <div class="toggle-button">
-          <button>SUBSCRIBE</button>
-        </div>
-
-        <!-- Rewrite Mode Toggle -->
+        <!-- Biased Report Buttons -->
         <div class="rewrite-toggle">
           <button
             :class="{ active: currentMode === 'left' }"
             @click="setMode('left')"
           >
-            Rewrite Left
+            LEFT-WING REPORT
           </button>
           <button
             :class="{ active: currentMode === 'right' }"
             @click="setMode('right')"
           >
-            Rewrite Right
+            RIGHT-WING REPORT
           </button>
         </div>
       </div>
@@ -66,12 +62,18 @@
       <div class="content-area">
         <!-- Audio player -->
         <div class="audio-player">
-          <button class="play-button">▶</button>
+          <button 
+            class="play-button" 
+            @click.stop="playBiasedReport('right')" 
+            :disabled="isLoadingAudio"
+          >
+            {{ isPlayingAudio ? '❚❚' : '▶' }}
+          </button>
           <div class="audio-timeline">
-            <div class="audio-progress"></div>
+            <div class="audio-progress" :style="{ width: audioProgress + '%' }"></div>
           </div>
-          <div class="live-button" :class="{ flashing: true }">
-            <span>LIVE</span>
+          <div v-if="isPlayingAudio || isLoadingAudio" class="live-button" :class="{ flashing: isPlayingAudio }">
+            <span>{{ isLoadingAudio ? 'LOADING...' : 'LIVE' }}</span>
           </div>
         </div>
 
@@ -162,6 +164,116 @@ export default defineComponent({
       store.dispatch("setRewriteMode", mode);
     };
 
+    // --- Audio Playback State ---
+    const currentAudio = ref<HTMLAudioElement | null>(null); // Keep track of the current audio
+    const isLoadingAudio = ref(false);
+    const isPlayingAudio = ref(false);
+    const audioProgress = ref(0);
+    // Store listener references for cleanup
+    let listeners = {
+      onCanPlayThrough: () => { console.log('Audio can play through'); },
+      onTimeUpdate: () => { console.log('Audio time update'); },
+      onEnded: () => { console.log('Audio ended'); },
+      onError: (e: Event) => { console.error("Listener error placeholder", e) }
+    };
+
+    const removeAudioListeners = (audioElement: HTMLAudioElement) => {
+      if (!audioElement) return;
+      console.log("Removing listeners from old audio element");
+      audioElement.removeEventListener('canplaythrough', listeners.onCanPlayThrough);
+      audioElement.removeEventListener('timeupdate', listeners.onTimeUpdate);
+      audioElement.removeEventListener('ended', listeners.onEnded);
+      audioElement.removeEventListener('error', listeners.onError);
+    };
+
+    // --- NEW: Method to play biased audio report ---
+    const playBiasedReport = async (bias: 'left' | 'right') => {
+      console.log(`Attempting to play ${bias}-wing report...`);
+
+      // --- Explicitly remove listeners and stop previous audio --- 
+      if (currentAudio.value) {
+        console.log("Cleaning up previous audio instance.");
+        currentAudio.value.pause();
+        removeAudioListeners(currentAudio.value); // Remove listeners
+        currentAudio.value = null; // Clear previous audio object
+      }
+      // --- Reset state --- 
+      isPlayingAudio.value = false;
+      isLoadingAudio.value = true; // Set loading state
+      audioProgress.value = 0;
+      store.dispatch('setError', null); // Clear previous errors via store
+
+      const apiUrl = `/api/articles/tts/biased-breaking-news?bias=${bias}`;
+
+      try {
+        const audioElement = new Audio(apiUrl);
+        currentAudio.value = audioElement; // Assign new audio element
+
+        // --- Define Listeners ---
+        listeners.onCanPlayThrough = () => {
+          console.log('Audio ready to play.');
+          audioElement.play().then(() => {
+              isPlayingAudio.value = true;
+              isLoadingAudio.value = false; // Loading finished, playback started
+              console.log('Audio playback started.');
+           }).catch(e => {
+              console.error('Error starting playback:', e);
+              store.dispatch('setError', `Failed to play ${bias}-wing audio report.`);
+              isLoadingAudio.value = false;
+              isPlayingAudio.value = false;
+              removeAudioListeners(audioElement); // Clean up on error too
+              currentAudio.value = null;
+           });
+        };
+        
+        listeners.onTimeUpdate = () => {
+           if (audioElement.duration) {
+               audioProgress.value = (audioElement.currentTime / audioElement.duration) * 100;
+           }
+        };
+
+        listeners.onEnded = () => {
+          console.log('Audio playback finished.');
+          isPlayingAudio.value = false;
+          isLoadingAudio.value = false;
+          audioProgress.value = 0; // Reset progress
+          removeAudioListeners(audioElement); // Clean up listeners
+          currentAudio.value = null;
+        };
+
+        listeners.onError = (e) => {
+          console.error('Error playing audio:', e);
+          store.dispatch('setError', `Failed to play ${bias}-wing audio report. Check console/server.`);
+          isPlayingAudio.value = false;
+          isLoadingAudio.value = false;
+          audioProgress.value = 0;
+          removeAudioListeners(audioElement); // Clean up listeners
+          currentAudio.value = null;
+        };
+
+        // --- Attach Listeners ---
+        console.log("Attaching listeners to new audio element");
+        audioElement.addEventListener('canplaythrough', listeners.onCanPlayThrough);
+        audioElement.addEventListener('timeupdate', listeners.onTimeUpdate);
+        audioElement.addEventListener('ended', listeners.onEnded);
+        audioElement.addEventListener('error', listeners.onError);
+
+        // Load the audio. Playback will start via the 'canplaythrough' listener.
+        console.log("Calling load() on new audio element");
+        audioElement.load(); 
+
+      } catch (err) { // Catch errors during new Audio() or setup
+        console.error(`Error setting up audio for ${bias}-wing report:`, err);
+        store.dispatch('setError', `Failed to fetch ${bias}-wing audio.`);
+        isLoadingAudio.value = false;
+        isPlayingAudio.value = false;
+        if (currentAudio.value) { // Ensure cleanup even if setup fails mid-way
+           removeAudioListeners(currentAudio.value);
+        }
+        currentAudio.value = null;
+      }
+    };
+
     // Methods
     const loadAllArticles = async () => {
       console.log(
@@ -189,6 +301,10 @@ export default defineComponent({
       currentMode,
       backgroundColor,
       categoryColorMap,
+      playBiasedReport, // <-- Expose the new method
+      isLoadingAudio,
+      isPlayingAudio,
+      audioProgress,
     };
   },
 });

@@ -3,25 +3,29 @@ import { NewsService } from '../services/NewsService';
 import ArticleModel, { IArticle } from '../models/Article'; // Ensure IArticle is imported
 import { ContentTransformationService } from '../services/ContentTransformationService';
 import { OpenAIService } from '../services/OpenAIService';
-import { ApiError } from '../utils/error';
+import { ApiError } from '../utils/error'; // Correct path to error.ts
 import { PoliticalBias } from '../models/Article';
 import mongoose from 'mongoose';
+import { elevenLabsService } from '../services/ElevenLabsService'; // Ensure ElevenLabsService is imported
+import logger from '../config/logger'; // Correct path to logger.ts
 
 const newsService = new NewsService();
 const contentTransformationService = new ContentTransformationService();
 const openAIService = new OpenAIService();
+
+const DEFAULT_VOICE_ID = '21m00Tcm4TlvDq8ikWAM'; // Example default voice ID
 
 // Fetch all articles from database
 export const getAllArticles = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const category = req.query.category as string;
     
-    console.log(`[getAllArticles] Retrieving articles from MongoDB: category=${category || 'all'}`);
+    logger.info(`[getAllArticles] Retrieving articles from MongoDB: category=${category || 'all'}`);
     
     // Use the enhanced NewsService method that removes duplicates and limits to 20 articles
     const articles = await newsService.getAllArticles(20, category);
     
-    console.log(`[getAllArticles] Retrieved ${articles.length} articles from MongoDB with duplicates removed`);
+    logger.info(`[getAllArticles] Retrieved ${articles.length} articles from MongoDB with duplicates removed`);
     
     res.json({
       success: true,
@@ -29,7 +33,7 @@ export const getAllArticles = async (req: Request, res: Response, next: NextFunc
       data: articles
     });
   } catch (error) {
-    console.error('Error in getAllArticles:', error);
+    logger.error('Error in getAllArticles:', error);
     next(error);
   }
 };
@@ -39,19 +43,19 @@ export const getAllArticlesNoLimit = async (req: Request, res: Response, next: N
   try {
     const category = req.query.category as string;
     
-    console.log(`[getAllArticlesNoLimit] Retrieving ALL articles from MongoDB: category=${category || 'all'}`);
+    logger.info(`[getAllArticlesNoLimit] Retrieving ALL articles from MongoDB: category=${category || 'all'}`);
     
     // Query MongoDB directly to get all articles without limit
     const query = category ? { category } : {};
-    console.log('MongoDB query:', JSON.stringify(query));
+    logger.info('MongoDB query:', JSON.stringify(query));
     
     const articles = await ArticleModel.find(query)
       .sort({ publishedAt: -1 })
       .lean()  // Convert to plain JS objects for better performance
       .exec();
     
-    console.log(`[getAllArticlesNoLimit] Retrieved ${articles.length} total articles from MongoDB`);
-    console.log('Sample article IDs:', articles.slice(0, 3).map(a => a._id));
+    logger.info(`[getAllArticlesNoLimit] Retrieved ${articles.length} total articles from MongoDB`);
+    logger.info('Sample article IDs:', articles.slice(0, 3).map(a => a._id));
     
     res.json({
       success: true,
@@ -59,7 +63,7 @@ export const getAllArticlesNoLimit = async (req: Request, res: Response, next: N
       data: articles
     });
   } catch (error) {
-    console.error('Error in getAllArticlesNoLimit:', error);
+    logger.error('Error in getAllArticlesNoLimit:', error);
     next(error);
   }
 };
@@ -89,7 +93,7 @@ export const fetchAllArticles = async (req: Request, res: Response, next: NextFu
     const timeframe = req.query.timeframe as string || '24h';
     const pageSize = req.query.pageSize ? parseInt(req.query.pageSize as string, 10) : 20; 
 
-    console.log(`[fetchAllArticles] Fetching articles from News API: language=${language}, timeframe=${timeframe}, pageSize=${pageSize}`);
+    logger.info(`[fetchAllArticles] Fetching articles from News API: language=${language}, timeframe=${timeframe}, pageSize=${pageSize}`);
     
     // The service now fetches, saves, and returns the IArticle objects directly
     const articles: IArticle[] = await newsService.fetchAllArticlesAtOnce(pageSize, language, timeframe);
@@ -101,7 +105,7 @@ export const fetchAllArticles = async (req: Request, res: Response, next: NextFu
       data: articles
     });
   } catch (error: any) {
-    console.error('Error in fetchAllArticles:', error);
+    logger.error('Error in fetchAllArticles:', error);
     
     // The service method now attempts a fallback to DB internally on error.
     // If it still throws or returns empty, we return an error response.
@@ -109,7 +113,7 @@ export const fetchAllArticles = async (req: Request, res: Response, next: NextFu
       // Try one last time to get *any* articles from DB if service failed completely
       const existingArticles = await newsService.getAllArticles(50); // Use service method
       if (existingArticles.length > 0) {
-        console.warn('fetchAllArticles failed, returning existing articles as fallback.');
+        logger.warn('fetchAllArticles failed, returning existing articles as fallback.');
         return res.status(200).json({ // Return 200 OK, but indicate fallback
           success: true,
           message: 'Using existing articles (API fetch/process failed)',
@@ -118,7 +122,7 @@ export const fetchAllArticles = async (req: Request, res: Response, next: NextFu
         });
       }
     } catch (fallbackError: any) {
-      console.error('Fallback article retrieval also failed:', fallbackError);
+      logger.error('Fallback article retrieval also failed:', fallbackError);
       // If even the fallback fails, send the original error
       return next(error); // Pass original error to error handler
     }
@@ -138,7 +142,7 @@ export const fetchLatestNews = async (req: Request, res: Response, next: NextFun
     // Get category from path parameter instead of query
     const category = req.params.category || 'top'; 
  
-    console.log(`[fetchLatestNews] Fetching latest news from API: category=${category}, language=${language}, pageSize=${pageSize}`);
+    logger.info(`[fetchLatestNews] Fetching latest news from API: category=${category}, language=${language}, pageSize=${pageSize}`);
     
     // The service now handles checking the DB first and saving API results.
     // It directly returns IArticle[] whether from DB or after fetching/saving.
@@ -153,7 +157,7 @@ export const fetchLatestNews = async (req: Request, res: Response, next: NextFun
       });
     } catch (apiError: any) {
       // More detailed error handling for API calls
-      console.error(`API Error fetching ${category} articles:`, apiError.message);
+      logger.error(`API Error fetching ${category} articles:`, apiError.message);
       
       // The service handles the 429 fallback, so controller just passes error
       if (apiError instanceof ApiError) {
@@ -226,7 +230,7 @@ export const generateArticleExplanation = async (req: Request, res: Response, ne
       throw new ApiError(404, `Article with ID ${id} not found`);
     }
     
-    console.log(`Generating explanation for article: ${article.title}`);
+    logger.info(`Generating explanation for article: ${article.title}`);
     
     // Use the article title, content and category to generate an explanation
     const explanation = await openAIService.generateArticleExplanation(
@@ -248,7 +252,7 @@ export const generateArticleExplanation = async (req: Request, res: Response, ne
       }
     });
   } catch (error) {
-    console.error('Error generating article explanation:', error);
+    logger.error('Error generating article explanation:', error);
     next(error);
   }
 };
@@ -271,7 +275,7 @@ export const generateFullArticle = async (req: Request, res: Response, next: Nex
       data: article
     });
   } catch (error) {
-    console.error('Error in generateFullArticle:', error);
+    logger.error('Error in generateFullArticle:', error);
     next(error);
   }
 };
@@ -295,7 +299,7 @@ export const rewriteArticleWithRightWingBias = async (req: Request, res: Respons
       data: article
     });
   } catch (error) {
-    console.error('Error in rewriteArticleWithRightWingBias:', error);
+    logger.error('Error in rewriteArticleWithRightWingBias:', error);
     next(error);
   }
 };
@@ -313,7 +317,7 @@ export const processAllArticlesWithRightWingBias = async (req: Request, res: Res
       count: processedCount
     });
   } catch (error) {
-    console.error('Error in processAllArticlesWithRightWingBias:', error);
+    logger.error('Error in processAllArticlesWithRightWingBias:', error);
     next(error);
   }
 };
@@ -331,7 +335,7 @@ export const processDisplayedArticlesWithRightWingBias = async (req: Request, re
       count: processedCount
     });
   } catch (error) {
-    console.error('Error in processDisplayedArticlesWithRightWingBias:', error);
+    logger.error('Error in processDisplayedArticlesWithRightWingBias:', error);
     next(error);
   }
 };
@@ -339,7 +343,7 @@ export const processDisplayedArticlesWithRightWingBias = async (req: Request, re
 // Dynamically rewrite article with extreme right-wing bias
 export const rewriteArticleExtremeRight = async (req: Request, res: Response, next: NextFunction) => {
   const { id } = req.params;
-  console.log(`[rewriteArticleExtremeRight] Received request for article ID: ${id}`);
+  logger.info(`[rewriteArticleExtremeRight] Received request for article ID: ${id}`);
 
   if (!mongoose.isValidObjectId(id)) {
     return next(new ApiError(400, 'Invalid article ID format'));
@@ -360,7 +364,7 @@ export const rewriteArticleExtremeRight = async (req: Request, res: Response, ne
         return next(new ApiError(400, 'Article has no content to rewrite'));
     }
 
-    console.log(`[rewriteArticleExtremeRight] Rewriting content for article: ${title}`);
+    logger.info(`[rewriteArticleExtremeRight] Rewriting content for article: ${title}`);
     const rewrittenContent = await openAIService.rewriteExtremeRightWing(contentToRewrite, title);
 
     return res.json({ 
@@ -369,7 +373,7 @@ export const rewriteArticleExtremeRight = async (req: Request, res: Response, ne
     });
 
   } catch (error: any) {
-    console.error(`[rewriteArticleExtremeRight] Error rewriting article ID ${id}:`, error);
+    logger.error(`[rewriteArticleExtremeRight] Error rewriting article ID ${id}:`, error);
     // Pass specific OpenAI errors or a generic error
     next(error instanceof Error ? new ApiError(500, error.message) : error);
   }
@@ -405,7 +409,7 @@ export const rewriteArticleExtremeLeft = async (
       rewrittenContent: rewrittenContent,
     });
   } catch (error) {
-    console.error(`[ArticleController] Error rewriting article ${id} (left-wing):`, error);
+    logger.error(`[ArticleController] Error rewriting article ${id} (left-wing):`, error);
     next(error); // Pass error to the global error handler
   }
 };
@@ -428,7 +432,126 @@ export const rewriteArticleExtremeLeft = async (
      }
      return res.status(200).json({ success: true, message: 'Article deleted successfully.' });
    } catch (error) {
-     console.error(`[ArticleController] Error deleting article ${id}:`, error);
+     logger.error(`[ArticleController] Error deleting article ${id}:`, error);
      next(error); // Pass error to the global error handler
    }
  };
+
+export const generateSpecificBiasedHeadlineAudio = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void | Response> => {
+  const { id } = req.params;
+  const { bias } = req.body;
+
+  if (!id) {
+    return next(new ApiError(400, 'Article ID is required in URL parameters.'));
+  }
+
+  if (!bias || (bias !== 'left' && bias !== 'right')) {
+    return next(
+      new ApiError(400, 'Bias must be provided in the request body as either \'left\' or \'right\'.')
+    );
+  }
+
+  logger.info(`Generating ${bias}-biased audio for article ID: ${id}`);
+
+  try {
+    logger.info(`[generateSpecificBiasedHeadlineAudio] Request received for article ${id}, bias ${bias}`);
+
+    // 1. Fetch the article by ID
+    const article = await ArticleModel.findById(id).lean().exec();
+    if (!article) {
+      throw new ApiError(404, `Article with ID ${id} not found`);
+    }
+
+    logger.info(`[generateSpecificBiasedHeadlineAudio] Found article: ${article.title}`);
+
+    // Rewrite headline and prepend "Breaking news: "
+    const rewrittenHeadline = await openAIService.rewriteHeadlineWithBias(article.title, bias);
+    const textToSpeak = `Breaking news: ${rewrittenHeadline}`;
+    logger.info(`[generateSpecificBiasedHeadlineAudio] Text to synthesize: "${textToSpeak}"`);
+
+    // Generate audio stream
+    const audioStream = await elevenLabsService.generateSpeechStream(textToSpeak, DEFAULT_VOICE_ID);
+    if (!audioStream) {
+      throw new ApiError(500, 'Failed to generate audio stream from ElevenLabs.');
+    }
+
+    // Stream audio back
+    res.setHeader('Content-Type', 'audio/mpeg');
+    audioStream.pipe(res);
+
+    audioStream.on('error', (streamError) => {
+      logger.error('[generateSpecificBiasedHeadlineAudio] Error piping audio stream:', streamError);
+      if (!res.headersSent) {
+        next(new ApiError(500, 'Error streaming audio data.'));
+      }
+    });
+
+    audioStream.on('end', () => {
+      logger.info(`[generateSpecificBiasedHeadlineAudio] Audio stream for article ${id} finished.`);
+    });
+
+  } catch (error) {
+    logger.error('[generateSpecificBiasedHeadlineAudio] Error:', error);
+    next(error);
+  }
+};
+
+
+// Generate biased audio for the LATEST breaking news headline
+export const getBiasedBreakingNewsAudio = async (req: Request, res: Response, next: NextFunction) => {
+  const bias = req.query.bias as PoliticalBias;
+
+  if (!bias || (bias !== 'left' && bias !== 'right')) {
+    return next(new ApiError(400, 'Invalid or missing bias parameter. Must be "left" or "right".'));
+  }
+
+  logger.info(`[getBiasedBreakingNewsAudio] Request received for ${bias}-wing audio.`);
+
+  try {
+    // 1. Fetch the latest article (most recent publishedAt)
+    const latestArticle = await ArticleModel.findOne().sort({ publishedAt: -1 }).lean().exec();
+
+    if (!latestArticle) {
+      throw new ApiError(404, 'No articles found in the database to generate audio from.');
+    }
+
+    logger.info(`[getBiasedBreakingNewsAudio] Found latest article: ${latestArticle.title}`);
+
+    // 2. Rewrite the headline using OpenAI Service
+    // Prepend "Breaking news: "
+    const rewrittenHeadline = await openAIService.rewriteHeadlineWithBias(latestArticle.title, bias);
+    const textToSpeak = `Breaking news: ${rewrittenHeadline}`;
+    logger.info(`[getBiasedBreakingNewsAudio] Text to synthesize: "${textToSpeak}"`);
+
+    // 3. Generate audio stream using ElevenLabs Service
+    const audioStream = await elevenLabsService.generateSpeechStream(textToSpeak, DEFAULT_VOICE_ID);
+
+    if (!audioStream) {
+      throw new ApiError(500, 'Failed to generate audio stream from ElevenLabs.');
+    }
+
+    // 4. Stream the audio back to the client
+    res.setHeader('Content-Type', 'audio/mpeg');
+    audioStream.pipe(res);
+
+    audioStream.on('error', (streamError) => {
+      logger.error('[getBiasedBreakingNewsAudio] Error piping audio stream:', streamError);
+      // Ensure response hasn't already been sent before trying to send error
+      if (!res.headersSent) {
+        next(new ApiError(500, 'Error streaming audio data.'));
+      }
+    });
+
+    audioStream.on('end', () => {
+        logger.info('[getBiasedBreakingNewsAudio] Audio stream finished successfully.');
+    });
+
+  } catch (error) {
+    logger.error('[getBiasedBreakingNewsAudio] Error:', error);
+    next(error); // Pass error to the main error handler
+  }
+};

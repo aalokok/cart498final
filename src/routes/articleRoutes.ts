@@ -11,6 +11,8 @@ import {
   rewriteArticleExtremeLeft,
   processPendingArticles,
   generateFullArticle,
+  generateSpecificBiasedHeadlineAudio,
+  getBiasedBreakingNewsAudio
 } from '../controllers/articleController';
 
 const router = express.Router();
@@ -50,5 +52,11 @@ router.post('/process-all', processPendingArticles);
 
 // Generate a full article from a headline
 router.post('/:id/generate-full-article', generateFullArticle);
+
+// Generate and stream biased headline audio for a SPECIFIC article ID
+router.post('/:id/tts/biased-headline', generateSpecificBiasedHeadlineAudio);
+
+// Generate and stream biased audio for the LATEST breaking news
+router.get('/tts/biased-breaking-news', getBiasedBreakingNewsAudio);
 
 export default router;
