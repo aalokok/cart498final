@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { NewsService } from '../services/NewsService';
 import ArticleModel, { IArticle } from '../models/Article'; // Ensure IArticle is imported
-import { ContentTransformationService } from '../services/ContentTransformationService';
 import { OpenAIService } from '../services/OpenAIService';
 import { ApiError } from '../utils/error'; // Correct path to error.ts
 import { PoliticalBias } from '../models/Article';
@@ -10,7 +9,6 @@ import { elevenLabsService } from '../services/ElevenLabsService'; // Ensure Ele
 import logger from '../config/logger'; // Correct path to logger.ts
 
 const newsService = new NewsService();
-const contentTransformationService = new ContentTransformationService();
 const openAIService = new OpenAIService();
 
 const DEFAULT_VOICE_ID = '21m00Tcm4TlvDq8ikWAM'; // Example default voice ID
@@ -172,178 +170,10 @@ export const fetchLatestNews = async (req: Request, res: Response, next: NextFun
   }
 };
 
-// Transform an article with specified political bias
-export const transformArticle = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const articleId = req.params.id;
-    const bias = (req.query.bias as PoliticalBias) || 'neutral';
-    
-    // Validate bias
-    if (!['left', 'right', 'neutral'].includes(bias)) {
-      throw new ApiError(400, 'Invalid bias. Must be "left", "right", or "neutral"');
-    }
-
-    const article = await contentTransformationService.transformArticle(articleId, bias);
-    res.json({
-      success: true,
-      message: `Successfully transformed article with ${bias} bias`,
-      data: article
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// Process all pending articles
-export const processPendingArticles = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const bias = (req.query.bias as PoliticalBias) || 'neutral';
-    
-    // Validate bias
-    if (!['left', 'right', 'neutral'].includes(bias)) {
-      throw new ApiError(400, 'Invalid bias. Must be "left", "right", or "neutral"');
-    }
-
-    const processedCount = await contentTransformationService.processPendingArticles(bias);
-    
-    res.json({
-      success: true,
-      message: `Processed ${processedCount} articles`
-    });
-  } catch (error) {
-    next(error);
-  }
-}; 
-
-// Generate explanation for an article using OpenAI
-export const generateArticleExplanation = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { id } = req.params;
-    
-    if (!mongoose.isValidObjectId(id)) {
-      throw new ApiError(400, `Invalid article ID: ${id}`);
-    }
-    
-    const article = await ArticleModel.findById(id);
-    
-    if (!article) {
-      throw new ApiError(404, `Article with ID ${id} not found`);
-    }
-    
-    logger.info(`Generating explanation for article: ${article.title}`);
-    
-    // Use the article title, content and category to generate an explanation
-    const explanation = await openAIService.generateArticleExplanation(
-      article.title,
-      article.content || article.description || '', // Use content if available, otherwise description
-      article.category
-    );
-    
-    // Save the explanation to the article in MongoDB for future use
-    article.explanation = explanation;
-    await article.save();
-    
-    res.json({
-      success: true,
-      data: {
-        articleId: article._id,
-        title: article.title,
-        explanation
-      }
-    });
-  } catch (error) {
-    logger.error('Error generating article explanation:', error);
-    next(error);
-  }
-};
-
-// Generate a full article from a headline using OpenAI
-export const generateFullArticle = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const articleId = req.params.id;
-    
-    if (!mongoose.Types.ObjectId.isValid(articleId)) {
-      throw new ApiError(400, 'Invalid article ID format');
-    }
-    
-    // Call the service to generate a full article
-    const article = await contentTransformationService.generateFullArticleFromHeadline(articleId);
-    
-    res.json({
-      success: true,
-      message: 'Article generated successfully',
-      data: article
-    });
-  } catch (error) {
-    logger.error('Error in generateFullArticle:', error);
-    next(error);
-  }
-};
-
-/**
- * Rewrite an article with right-wing bias using OpenAI and store in MongoDB
- */
-export const rewriteArticleWithRightWingBias = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { id } = req.params;
-    
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      throw new ApiError(400, 'Invalid article ID format');
-    }
-
-    const article = await contentTransformationService.rewriteArticleWithRightWingBias(id);
-    
-    res.json({
-      success: true,
-      message: 'Article rewritten with right-wing bias successfully',
-      data: article
-    });
-  } catch (error) {
-    logger.error('Error in rewriteArticleWithRightWingBias:', error);
-    next(error);
-  }
-};
-
-/**
- * Process all articles with right-wing bias
- */
-export const processAllArticlesWithRightWingBias = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const processedCount = await contentTransformationService.processAllArticlesWithRightWingBias();
-    
-    res.json({
-      success: true,
-      message: `Successfully processed ${processedCount} articles with right-wing bias`,
-      count: processedCount
-    });
-  } catch (error) {
-    logger.error('Error in processAllArticlesWithRightWingBias:', error);
-    next(error);
-  }
-};
-
-/**
- * Process displayed articles (20) with right-wing bias
- */
-export const processDisplayedArticlesWithRightWingBias = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const processedCount = await contentTransformationService.processDisplayedArticlesWithRightWingBias();
-    
-    res.json({
-      success: true,
-      message: `Successfully processed ${processedCount} displayed articles with right-wing bias`,
-      count: processedCount
-    });
-  } catch (error) {
-    logger.error('Error in processDisplayedArticlesWithRightWingBias:', error);
-    next(error);
-  }
-};
-
 // Dynamically rewrite article with extreme right-wing bias
 export const rewriteArticleExtremeRight = async (req: Request, res: Response, next: NextFunction) => {
   const { id } = req.params;
-  logger.info(`[rewriteArticleExtremeRight] Received request for article ID: ${id}`);
+  logger.info(`[rewriteArticleExtreme] Received request for article ID: ${id}, bias: right`);
 
   if (!mongoose.isValidObjectId(id)) {
     return next(new ApiError(400, 'Invalid article ID format'));
@@ -364,8 +194,9 @@ export const rewriteArticleExtremeRight = async (req: Request, res: Response, ne
         return next(new ApiError(400, 'Article has no content to rewrite'));
     }
 
-    logger.info(`[rewriteArticleExtremeRight] Rewriting content for article: ${title}`);
-    const rewrittenContent = await openAIService.rewriteExtremeRightWing(contentToRewrite, title);
+    logger.info(`[rewriteArticleExtreme] Rewriting content for article: ${title}`);
+    // Call the consolidated service function
+    const rewrittenContent = await openAIService.rewriteExtreme(contentToRewrite, title, 'right');
 
     return res.json({ 
         success: true, 
@@ -373,7 +204,7 @@ export const rewriteArticleExtremeRight = async (req: Request, res: Response, ne
     });
 
   } catch (error: any) {
-    logger.error(`[rewriteArticleExtremeRight] Error rewriting article ID ${id}:`, error);
+    logger.error(`[rewriteArticleExtreme] Error rewriting article ID ${id} (bias: right):`, error);
     // Pass specific OpenAI errors or a generic error
     next(error instanceof Error ? new ApiError(500, error.message) : error);
   }
@@ -386,6 +217,7 @@ export const rewriteArticleExtremeLeft = async (
   next: NextFunction
 ): Promise<void | Response> => {
   const { id } = req.params;
+  logger.info(`[rewriteArticleExtreme] Received request for article ID: ${id}, bias: left`);
   if (!id || !mongoose.Types.ObjectId.isValid(id)) {
     return next(new ApiError(400, "Valid article ID is required."));
   }
@@ -401,7 +233,8 @@ export const rewriteArticleExtremeLeft = async (
       return next(new ApiError(400, "Article has no content or description to rewrite."));
     }
 
-    const rewrittenContent = await openAIService.rewriteExtremeLeftWing(contentToRewrite, article.title || 'Untitled Article');
+    // Call the consolidated service function
+    const rewrittenContent = await openAIService.rewriteExtreme(contentToRewrite, article.title || 'Untitled Article', 'left');
     
     return res.status(200).json({
       success: true,
@@ -409,7 +242,7 @@ export const rewriteArticleExtremeLeft = async (
       rewrittenContent: rewrittenContent,
     });
   } catch (error) {
-    logger.error(`[ArticleController] Error rewriting article ${id} (left-wing):`, error);
+    logger.error(`[rewriteArticleExtreme] Error rewriting article ID ${id} (bias: left):`, error);
     next(error); // Pass error to the global error handler
   }
 };
@@ -436,122 +269,3 @@ export const rewriteArticleExtremeLeft = async (
      next(error); // Pass error to the global error handler
    }
  };
-
-export const generateSpecificBiasedHeadlineAudio = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void | Response> => {
-  const { id } = req.params;
-  const { bias } = req.body;
-
-  if (!id) {
-    return next(new ApiError(400, 'Article ID is required in URL parameters.'));
-  }
-
-  if (!bias || (bias !== 'left' && bias !== 'right')) {
-    return next(
-      new ApiError(400, 'Bias must be provided in the request body as either \'left\' or \'right\'.')
-    );
-  }
-
-  logger.info(`Generating ${bias}-biased audio for article ID: ${id}`);
-
-  try {
-    logger.info(`[generateSpecificBiasedHeadlineAudio] Request received for article ${id}, bias ${bias}`);
-
-    // 1. Fetch the article by ID
-    const article = await ArticleModel.findById(id).lean().exec();
-    if (!article) {
-      throw new ApiError(404, `Article with ID ${id} not found`);
-    }
-
-    logger.info(`[generateSpecificBiasedHeadlineAudio] Found article: ${article.title}`);
-
-    // Rewrite headline and prepend "Breaking news: "
-    const rewrittenHeadline = await openAIService.rewriteHeadlineWithBias(article.title, bias);
-    const textToSpeak = `Breaking news: ${rewrittenHeadline}`;
-    logger.info(`[generateSpecificBiasedHeadlineAudio] Text to synthesize: "${textToSpeak}"`);
-
-    // Generate audio stream
-    const audioStream = await elevenLabsService.generateSpeechStream(textToSpeak, DEFAULT_VOICE_ID);
-    if (!audioStream) {
-      throw new ApiError(500, 'Failed to generate audio stream from ElevenLabs.');
-    }
-
-    // Stream audio back
-    res.setHeader('Content-Type', 'audio/mpeg');
-    audioStream.pipe(res);
-
-    audioStream.on('error', (streamError) => {
-      logger.error('[generateSpecificBiasedHeadlineAudio] Error piping audio stream:', streamError);
-      if (!res.headersSent) {
-        next(new ApiError(500, 'Error streaming audio data.'));
-      }
-    });
-
-    audioStream.on('end', () => {
-      logger.info(`[generateSpecificBiasedHeadlineAudio] Audio stream for article ${id} finished.`);
-    });
-
-  } catch (error) {
-    logger.error('[generateSpecificBiasedHeadlineAudio] Error:', error);
-    next(error);
-  }
-};
-
-
-// Generate biased audio for the LATEST breaking news headline
-export const getBiasedBreakingNewsAudio = async (req: Request, res: Response, next: NextFunction) => {
-  const bias = req.query.bias as PoliticalBias;
-
-  if (!bias || (bias !== 'left' && bias !== 'right')) {
-    return next(new ApiError(400, 'Invalid or missing bias parameter. Must be "left" or "right".'));
-  }
-
-  logger.info(`[getBiasedBreakingNewsAudio] Request received for ${bias}-wing audio.`);
-
-  try {
-    // 1. Fetch the latest article (most recent publishedAt)
-    const latestArticle = await ArticleModel.findOne().sort({ publishedAt: -1 }).lean().exec();
-
-    if (!latestArticle) {
-      throw new ApiError(404, 'No articles found in the database to generate audio from.');
-    }
-
-    logger.info(`[getBiasedBreakingNewsAudio] Found latest article: ${latestArticle.title}`);
-
-    // 2. Rewrite the headline using OpenAI Service
-    // Prepend "Breaking news: "
-    const rewrittenHeadline = await openAIService.rewriteHeadlineWithBias(latestArticle.title, bias);
-    const textToSpeak = `Breaking news: ${rewrittenHeadline}`;
-    logger.info(`[getBiasedBreakingNewsAudio] Text to synthesize: "${textToSpeak}"`);
-
-    // 3. Generate audio stream using ElevenLabs Service
-    const audioStream = await elevenLabsService.generateSpeechStream(textToSpeak, DEFAULT_VOICE_ID);
-
-    if (!audioStream) {
-      throw new ApiError(500, 'Failed to generate audio stream from ElevenLabs.');
-    }
-
-    // 4. Stream the audio back to the client
-    res.setHeader('Content-Type', 'audio/mpeg');
-    audioStream.pipe(res);
-
-    audioStream.on('error', (streamError) => {
-      logger.error('[getBiasedBreakingNewsAudio] Error piping audio stream:', streamError);
-      // Ensure response hasn't already been sent before trying to send error
-      if (!res.headersSent) {
-        next(new ApiError(500, 'Error streaming audio data.'));
-      }
-    });
-
-    audioStream.on('end', () => {
-        logger.info('[getBiasedBreakingNewsAudio] Audio stream finished successfully.');
-    });
-
-  } catch (error) {
-    logger.error('[getBiasedBreakingNewsAudio] Error:', error);
-    next(error); // Pass error to the main error handler
-  }
-};

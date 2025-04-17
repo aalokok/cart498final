@@ -183,27 +183,6 @@ export default createStore<State>({
         commit("SET_LOADING", false);
       }
     },
-    async processArticle({ commit }, id: string) {
-      commit("SET_LOADING", true);
-      commit("CLEAR_ERROR");
-      try {
-        const response = await axios.post(
-          `${API_URL}/articles/transform/${id}`
-        );
-        commit("SET_CURRENT_ARTICLE", response.data.data);
-        return response.data.data;
-      } catch (error: any) {
-        commit(
-          "SET_ERROR",
-          error.response?.data?.error ||
-            `Failed to process article with ID ${id}`
-        );
-        console.error("Error processing article:", error);
-        return null;
-      } finally {
-        commit("SET_LOADING", false);
-      }
-    },
     async fetchArticlesByCategory({ commit, state }, category) {
       commit("SET_LOADING", true);
       commit("CLEAR_ERROR");
