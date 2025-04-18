@@ -6,13 +6,14 @@
   "scripts": {
     "start": "node dist/server.js",
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
-    "build": "tsc",
+    "build": "npm run build:backend && npm run build:frontend && npm run copy-frontend",
     "test": "echo \"Error: no test specified\" && exit 1",
     "frontend": "cd frontend && npm run serve",
     "dev:all": "concurrently \"npm run dev\" \"npm run frontend\"",
     "build:frontend": "cd frontend && npm install && npm run build",
     "build:backend": "npm install && tsc",
-    "vercel-build": "echo 'Building backend' && npm run build:backend && echo 'Backend build complete' && echo 'Building frontend' && npm run build:frontend && echo 'Frontend build complete' && ls -la frontend/dist && ls -la dist"
+    "copy-frontend": "node -e \"const fs=require('fs');const path=require('path');const dir=path.join('dist','frontend','dist');if(!fs.existsSync(dir)){fs.mkdirSync(dir,{recursive:true})};fs.cpSync('frontend/dist',dir,{recursive:true});console.log('Frontend files copied to:',dir);\"",
+    "vercel-build": "npm run build"
   },
   "keywords": [
     "news",

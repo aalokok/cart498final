@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
 import { connectDatabase } from './config/database';
 import { env, validateEnv } from './config/env';
 import { errorHandler } from './utils/error';
@@ -34,6 +35,22 @@ app.get('/api/debug', (req, res) => {
     path: req.path
   });
 });
+
+// Serve static frontend files in production
+if (process.env.NODE_ENV === 'production') {
+  const frontendBuildPath = path.join(__dirname, './frontend/dist');
+  console.log(`Serving frontend from: ${frontendBuildPath}`);
+  
+  // Serve static files from the frontend build
+  app.use(express.static(frontendBuildPath));
+  
+  // Handle any routes not matched by API - serve the SPA's index.html
+  app.get('*', (req, res) => {
+    if (!req.path.startsWith('/api')) {
+      res.sendFile(path.join(frontendBuildPath, 'index.html'));
+    }
+  });
+}
 
 // !! Important: Connect Database before exporting app !!
 // Vercel handles startup differently. Consider connecting on the first request
