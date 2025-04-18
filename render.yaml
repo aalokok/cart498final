@@ -20,7 +20,7 @@ services:
         sync: false
       - key: NEWS_REFRESH_INTERVAL_MINUTES
         value: 720
-    healthCheckPath: /api/articles
+    healthCheckPath: /
 
   # Frontend Service
   - type: web

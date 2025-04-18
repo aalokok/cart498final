@@ -75,8 +75,8 @@ app.listen(PORT, '0.0.0.0', () => {
   
   // Start scheduled tasks
   console.log(`[Server Startup] Starting scheduled jobs...`);
-  scheduleJobs();
-  console.log(`[Server Startup] Scheduled jobs initiated.`);
+  // scheduleJobs(); // Temporarily disabled for debugging
+  // console.log(`[Server Startup] Scheduled jobs initiated.`);
 });
 
 // Log any potential unhandled errors during startup
