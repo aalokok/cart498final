@@ -38,27 +38,24 @@ app.use((req, res, next) => {
 // Error handling middleware
 app.use(errorHandler);
 
-// Connect to database immediately for Vercel serverless environment
+// Connect to database
 connectDatabase().catch(error => {
   console.error('Error connecting to database:', error);
   process.exit(1);
 });
 
-// Get the port
+// Always start the server regardless of environment
 const PORT = process.env.PORT || env.PORT || 3000;
-
-// Start the server in both development and production
 app.listen(PORT, () => {
   console.log(`Server running in ${env.NODE_ENV} mode on port ${PORT}`);
   
-  // Only log the API URL in development
   if (env.NODE_ENV === 'development') {
     console.log(`API available at http://localhost:${PORT}/api/articles`);
   }
   
-  // Start scheduled tasks in both environments
+  // Start scheduled tasks
   scheduleJobs();
 });
 
-// Also export for serverless environments (Vercel)
+// Export the app for potential serverless environments
 export default app; 
