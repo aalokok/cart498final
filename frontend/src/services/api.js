@@ -1,8 +1,23 @@
 import axios from 'axios';
 
+// Determine the base URL based on environment
+const getBaseUrl = () => {
+  // In production, use the deployed API URL
+  if (process.env.NODE_ENV === 'production') {
+    // For Vercel deployment
+    if (window.location.hostname.includes('vercel.app')) {
+      return 'https://the-actual-informer-api.vercel.app/api';
+    }
+    // For Render.com deployment
+    return 'https://the-actual-informer-api.onrender.com/api';
+  }
+  // In development, use the relative URL which will be handled by the proxy
+  return '/api';
+};
+
 // Create a configurable axios instance
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: getBaseUrl(),
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json',

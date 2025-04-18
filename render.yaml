@@ -1,0 +1,37 @@
+services:
+  # Backend API Service
+  - type: web
+    name: the-actual-informer-api
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: node dist/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URI
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: NEWS_API_KEY
+        sync: false
+      - key: ELEVENLABS_API_KEY
+        sync: false
+      - key: NEWS_REFRESH_INTERVAL_MINUTES
+        value: 720
+    healthCheckPath: /api/articles
+
+  # Frontend Service
+  - type: web
+    name: the-actual-informer
+    env: static
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: ./frontend/dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: NODE_ENV
+        value: production 

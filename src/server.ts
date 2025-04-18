@@ -13,7 +13,10 @@ validateEnv();
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:8080', 'https://theactualinformer.vercel.app', 'https://the-actual-informer.onrender.com'],
+  credentials: true
+}));
 app.use(express.json());
 
 // API Routes
@@ -38,23 +41,26 @@ app.use(errorHandler);
 // Start server
 const PORT = env.PORT;
 
-const startServer = async () => {
-  try {
-    // Connect to database
-    await connectDatabase();
-    
-    // Start Express server
-    app.listen(PORT, () => {
-      console.log(`Server running in ${env.NODE_ENV} mode on port ${PORT}`);
-      console.log(`API available at http://localhost:${PORT}/api/articles`);
-      
-      // Start scheduled tasks using the new cron-based scheduler
-      scheduleJobs();
-    });
-  } catch (error) {
-    console.error('Error starting server:', error);
-    process.exit(1);
-  }
-};
+// Connect to database immediately for Vercel serverless environment
+connectDatabase().catch(error => {
+  console.error('Error connecting to database:', error);
+  process.exit(1);
+});
 
-startServer(); 
+// Only start the server in development mode
+if (env.NODE_ENV === 'development') {
+  app.listen(PORT, () => {
+    console.log(`Server running in ${env.NODE_ENV} mode on port ${PORT}`);
+    console.log(`API available at http://localhost:${PORT}/api/articles`);
+    
+    // Start scheduled tasks using the new cron-based scheduler
+    scheduleJobs();
+  });
+} else {
+  // In production (Vercel), we're in a serverless environment
+  // The scheduler will need to be handled differently (e.g., with Vercel Cron)
+  console.log('Running in serverless mode');
+}
+
+// Export for serverless
+export default app; 
