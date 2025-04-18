@@ -1,22 +1,16 @@
 #!/bin/bash
-set -e
+# Build script for Vercel deployment
 
-# Build Backend
+# Build backend
 echo "Building backend..."
-npm ci
+npm install
 npm run build
-echo "Backend build complete."
 
-# Build Frontend
+# Build frontend
 echo "Building frontend..."
 cd frontend
-npm ci
-npm run build
-echo "Frontend build complete."
+npm install
+# Use the vercel-build helper script
+npm run vercel-build
 
-# Check output
-echo "Checking build output..."
-ls -la ../dist
-ls -la dist
-
-echo "Build process complete!" 
+echo "Build process completed" 
