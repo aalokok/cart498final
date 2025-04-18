@@ -2,35 +2,28 @@
   "version": 2,
   "builds": [
     {
-      "src": "dist/server.js", 
+      "src": "package.json", 
       "use": "@vercel/node",
-      "config": { "includeFiles": ["dist/**"] }
+      "config": {
+        "buildCommand": "npm run build:backend"
+      }
     },
     {
-      "src": "frontend/package.json", 
+      "src": "frontend/package.json",
       "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
+      "config": { "distDir": "dist" } 
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
       "dest": "dist/server.js"
-    },
-    {
-      "handle": "filesystem"
-    },
-    {
-        "src": "/.*",
-        "dest": "/frontend/dist/index.html"
     }
   ],
   "crons": [
     {
       "path": "/api/articles/cron/refresh-and-clean",
-      "schedule": "0 0 * * *" 
+      "schedule": "0 0 * * *"
     }
   ]
 } 
