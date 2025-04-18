@@ -38,7 +38,8 @@ app.get('/api/debug', (req, res) => {
 
 // Serve static frontend files in production
 if (process.env.NODE_ENV === 'production') {
-  const frontendBuildPath = path.join(__dirname, './frontend/dist');
+  // In production, the frontend build is in a different location relative to the server
+  const frontendBuildPath = path.join(__dirname, '../frontend/dist');
   console.log(`Serving frontend from: ${frontendBuildPath}`);
   
   // Serve static files from the frontend build
