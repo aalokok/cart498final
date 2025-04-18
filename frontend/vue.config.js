@@ -2,12 +2,12 @@ const { defineConfig } = require('@vue/cli-service')
 
 module.exports = defineConfig({
   transpileDependencies: true,
-  // Ensure the publicPath is set to root
+  // Standard root path
   publicPath: '/',
-  // Output directly to dist directory (standard for Vercel)
-  outputDir: '../public',
-  // Don't add a subfolder for assets
-  assetsDir: '',
+  // Standard Vue output location
+  outputDir: 'dist',
+  // Standard assets location
+  assetsDir: 'assets',
   devServer: {
     proxy: {
       '/api': {

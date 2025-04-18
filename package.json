@@ -2,19 +2,19 @@
   "name": "the-actual-informer",
   "version": "1.0.0",
   "description": "A web application that fetches real news and uses AI to transform them into exaggerated versions",
-  "main": "dist/server.js",
+  "main": "api/server.js",
   "engines": {
     "node": "18.x"
   },
   "scripts": {
-    "start": "node dist/server.js",
+    "start": "node api/server.js",
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1",
     "frontend": "cd frontend && npm run serve",
     "dev:all": "concurrently \"npm run dev\" \"npm run frontend\"",
-    "build:frontend": "cd frontend && npm ci && npm run build",
-    "build:backend": "npm ci && npm run build",
+    "build:frontend": "cd frontend && npm install && npm run build",
+    "build:backend": "npm install && npm run build",
     "vercel-build": "npm run build:backend && npm run build:frontend"
   },
   "keywords": [

@@ -40,27 +40,6 @@ app.get('/api/debug', (req, res) => {
   });
 });
 
-// Serve static files from the public directory if in production
-if (process.env.NODE_ENV === 'production') {
-  // Get the directory of the current file
-  const currentDir = __dirname;
-  // The public directory is at ./public relative to the dist directory
-  const publicPath = path.join(currentDir, 'public');
-  
-  console.log(`Serving static files from: ${publicPath}`);
-  
-  // Serve static files
-  app.use(express.static(publicPath));
-  
-  // For any other request, serve the index.html
-  app.get('*', (req, res) => {
-    // Skip API routes
-    if (!req.path.startsWith('/api')) {
-      res.sendFile(path.join(publicPath, 'index.html'));
-    }
-  });
-}
-
 // Connect to database
 connectDatabase().catch(err => {
   console.error('Database connection error:', err);
