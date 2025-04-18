@@ -13,9 +13,9 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "frontend": "cd frontend && npm run serve",
     "dev:all": "concurrently \"npm run dev\" \"npm run frontend\"",
-    "build:frontend": "cd frontend && npm install --include=dev && npm install @vue/cli-plugin-babel @vue/cli-plugin-eslint @vue/cli-service --save-dev && npm run build",
+    "build:frontend": "cd frontend && npm install && npm install -g @vue/cli && npm run build",
     "build:backend": "npm install && npm run build",
-    "vercel-build": "npm run build:backend && npm run build:frontend"
+    "vercel-build": "npm run build:backend && cd frontend && npm install && npx @vue/cli-service build"
   },
   "keywords": [
     "news",
