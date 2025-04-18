@@ -44,30 +44,31 @@ export const getAllArticles = async (req: Request, res: Response, next: NextFunc
 
 // Fetch ALL articles from database without any limit
 export const getAllArticlesNoLimit = async (req: Request, res: Response, next: NextFunction) => {
+  console.log('[Controller:getAllArticlesNoLimit] Request received - DEBUG MODE: Returning fixed response');
   try {
-    const category = req.query.category as string;
-    
-    logger.info(`[getAllArticlesNoLimit] Retrieving ALL articles from MongoDB: category=${category || 'all'}`);
-    
-    // Query MongoDB directly to get all articles without limit
-    const query = category ? { category } : {};
-    logger.info('MongoDB query:', JSON.stringify(query));
-    
-    const articles = await ArticleModel.find(query)
-      .sort({ publishedAt: -1 })
-      .lean()  // Convert to plain JS objects for better performance
-      .exec();
-    
-    logger.info(`[getAllArticlesNoLimit] Retrieved ${articles.length} total articles from MongoDB`);
-    logger.info('Sample article IDs:', articles.slice(0, 3).map(a => a._id));
-    
-    res.json({
+    // --- TEMPORARILY COMMENTED OUT DATABASE LOGIC ---
+    // const category = req.query.category as string;
+    // logger.info(`[getAllArticlesNoLimit] Retrieving ALL articles from MongoDB: category=${category || 'all'}`);
+    // const query = category ? { category } : {};
+    // logger.info('MongoDB query:', JSON.stringify(query));
+    // const articles = await ArticleModel.find(query)
+    //   .sort({ publishedAt: -1 })
+    //   .lean()
+    //   .exec();
+    // logger.info(`[getAllArticlesNoLimit] Retrieved ${articles.length} total articles from MongoDB`);
+    // logger.info('Sample article IDs:', articles.slice(0, 3).map(a => a._id));
+    // -- END OF TEMPORARY COMMENT OUT --
+
+    // Return a simple fixed response for testing
+    res.status(200).json({
       success: true,
-      count: articles.length,
-      data: articles
+      count: 1, // Hardcoded count
+      message: "DEBUG MODE - Fixed response",
+      data: [{ _id: "debug123", title: "Debug Article" }] // Hardcoded data
     });
+
   } catch (error) {
-    logger.error('Error in getAllArticlesNoLimit:', error);
+    console.error('[Controller:getAllArticlesNoLimit] Error (even in debug mode?): ', error);
     next(error);
   }
 };
