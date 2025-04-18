@@ -30,6 +30,7 @@ interface ArticleApiMethods {
         rewrittenContent?: string; // Make optional as it might fail
         message?: string; // Optional error message
     }>>;
+    forceRefreshAndClean(): Promise<ApiResponse>;
 }
 
 // Define the structure of the default export from api.js

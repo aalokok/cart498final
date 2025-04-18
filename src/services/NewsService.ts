@@ -576,4 +576,56 @@ export class NewsService {
       };
     });
   }
+
+  /**
+   * Fetch latest articles daily and remove old ones to keep a fixed number.
+   */
+  async fetchAndCleanDailyArticles(articlesToKeep: number = 50): Promise<void> {
+    console.log(`Starting daily fetch and clean job. Aiming to keep ${articlesToKeep} articles.`);
+    try {
+      // Step 1: Fetch the latest articles (using a slightly larger number to account for duplicates)
+      // We use fetchAllArticlesAtOnce as it gets a broad range.
+      const fetchSize = articlesToKeep + 20; // Fetch a bit more to ensure we have enough unique ones
+      console.log(`Fetching up to ${fetchSize} latest articles across categories...`);
+      const fetchedArticles = await this.fetchAllArticlesAtOnce(fetchSize);
+      
+      if (!fetchedArticles || fetchedArticles.length === 0) {
+        console.warn('Daily fetch did not return any articles. Skipping cleanup.');
+        return;
+      }
+      
+      console.log(`Successfully fetched ${fetchedArticles.length} articles.`);
+
+      // Step 2: Determine which articles to keep and which to delete
+      // Get IDs of all articles sorted by published date (most recent first)
+      const allArticleIds = await ArticleModel.find({}, '_id')
+        .sort({ publishedAt: -1 })
+        .lean();
+        
+      if (allArticleIds.length <= articlesToKeep) {
+        console.log(`Total articles (${allArticleIds.length}) is less than or equal to the desired amount (${articlesToKeep}). No cleanup needed.`);
+        return;
+      }
+      
+      // Identify the IDs to delete (those beyond the desired count)
+      const idsToDelete = allArticleIds.slice(articlesToKeep).map(doc => doc._id);
+      
+      console.log(`Found ${allArticleIds.length} total articles. Identified ${idsToDelete.length} articles to delete.`);
+
+      // Step 3: Delete the old articles
+      if (idsToDelete.length > 0) {
+        const deleteResult = await ArticleModel.deleteMany({ _id: { $in: idsToDelete } });
+        console.log(`Successfully deleted ${deleteResult.deletedCount} old articles.`);
+      } else {
+        console.log('No articles identified for deletion.');
+      }
+      
+      console.log('Daily fetch and clean job completed successfully.');
+
+    } catch (error: any) {
+      console.error('Error during daily fetch and clean job:', error.message);
+      // Decide if we want to throw the error or just log it
+      // throw error; // Optional: re-throw if needed by the scheduler
+    }
+  }
 }

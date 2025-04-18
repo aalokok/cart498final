@@ -269,3 +269,22 @@ export const rewriteArticleExtremeLeft = async (
      next(error); // Pass error to the global error handler
    }
  };
+
+/**
+ * Manually trigger the daily fetch and clean process.
+ */
+export const forceRefreshAndCleanArticles = async (req: Request, res: Response, next: NextFunction) => {
+  logger.info('[forceRefreshAndCleanArticles] Manual trigger received.');
+  try {
+    // Call the service method, keep default 50 articles
+    await newsService.fetchAndCleanDailyArticles(); 
+    res.status(200).json({
+      success: true,
+      message: 'Manual refresh and clean process initiated successfully.'
+    });
+  } catch (error) {
+    logger.error('[forceRefreshAndCleanArticles] Error during manual trigger:', error);
+    // Pass error to the main error handler
+    next(error instanceof ApiError ? error : new ApiError(500, `Manual refresh failed: ${error instanceof Error ? error.message : 'Unknown error'}`)); 
+  }
+};
