@@ -288,27 +288,3 @@ export const forceRefreshAndCleanArticles = async (req: Request, res: Response, 
     next(error instanceof ApiError ? error : new ApiError(500, `Manual refresh failed: ${error instanceof Error ? error.message : 'Unknown error'}`)); 
   }
 };
-
-/**
- * Endpoint specifically for Vercel Cron Job to trigger refresh and clean.
- * Uses GET request as required by Vercel Cron.
- */
-export const runCronRefreshAndClean = async (req: Request, res: Response, next: NextFunction) => {
-  logger.info('[runCronRefreshAndClean] Vercel Cron Job trigger received.');
-  // Simple Auth Check (Optional but Recommended for Cron Endpoints)
-  // You might want to add a secret query param or header check known only to Vercel
-  // Example: const cronSecret = req.headers['x-vercel-cron-secret'];
-  // if (cronSecret !== process.env.VERCEL_CRON_SECRET) {
-  //   logger.warn('[runCronRefreshAndClean] Unauthorized cron trigger attempt.');
-  //   return res.status(401).send('Unauthorized');
-  // }
-  
-  try {
-    await newsService.fetchAndCleanDailyArticles(); 
-    res.status(200).json({ success: true, message: 'Cron refresh and clean job completed successfully.' });
-  } catch (error) {
-    logger.error('[runCronRefreshAndClean] Error during cron job execution:', error);
-    // Don't use next(error) for cron usually, just send failure status
-    res.status(500).json({ success: false, message: `Cron job failed: ${error instanceof Error ? error.message : 'Unknown error'}` });
-  }
-};

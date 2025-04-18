@@ -40,19 +40,23 @@ app.get('/api/debug', (req, res) => {
   });
 });
 
-// Serve static frontend files in production
+// Serve static files from the public directory if in production
 if (process.env.NODE_ENV === 'production') {
-  // In production, the frontend build is in a different location relative to the server
-  const frontendBuildPath = path.join(__dirname, '../frontend/dist');
-  console.log(`Serving frontend from: ${frontendBuildPath}`);
+  // Get the directory of the current file
+  const currentDir = __dirname;
+  // The public directory is at ./public relative to the dist directory
+  const publicPath = path.join(currentDir, 'public');
   
-  // Serve static files from the frontend build
-  app.use(express.static(frontendBuildPath));
+  console.log(`Serving static files from: ${publicPath}`);
   
-  // Handle any routes not matched by API - serve the SPA's index.html
+  // Serve static files
+  app.use(express.static(publicPath));
+  
+  // For any other request, serve the index.html
   app.get('*', (req, res) => {
+    // Skip API routes
     if (!req.path.startsWith('/api')) {
-      res.sendFile(path.join(frontendBuildPath, 'index.html'));
+      res.sendFile(path.join(publicPath, 'index.html'));
     }
   });
 }
