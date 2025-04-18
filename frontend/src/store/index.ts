@@ -41,7 +41,8 @@ interface State {
   selectedCategory: string | null;
 }
 
-const API_URL = process.env.VUE_APP_API_URL || "http://localhost:3000/api";
+// For Vercel deployment, use relative path
+const API_URL = process.env.NODE_ENV === 'production' ? '/api' : (process.env.VUE_APP_API_URL || "http://localhost:3000/api");
 
 export default createStore<State>({
   state: {

@@ -145,7 +145,23 @@ export default defineComponent({
     // Set initial background color when component mounts
     onMounted(() => {
       document.body.style.backgroundColor = backgroundColor.value;
+      
+      // Check API connectivity on mount
+      checkApiConnectivity();
     });
+
+    // Add API connectivity check
+    const checkApiConnectivity = async () => {
+      try {
+        console.log("[App.vue] Checking API connectivity...");
+        const apiService = (await import('@/services/api')).default;
+        const response = await apiService.checkConnection();
+        console.log("[App.vue] API connection successful:", response.data);
+      } catch (error) {
+        console.error("[App.vue] API connection failed:", error);
+        store.commit("SET_ERROR", "Unable to connect to the API. Please try again later.");
+      }
+    };
 
     // Get current rewrite mode from store
     const currentMode = computed(() => store.getters.getCurrentRewriteMode as 'left' | 'right');

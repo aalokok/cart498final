@@ -36,6 +36,8 @@ interface ArticleApiMethods {
 // Define the structure of the default export from api.js
 interface ApiService {
     articles: ArticleApiMethods;
+    // Add the debug method we created
+    checkConnection(): Promise<ApiResponse>;
     // Add other top-level methods from api.js here if they exist
 }
 

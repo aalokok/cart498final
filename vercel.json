@@ -3,7 +3,10 @@
   "builds": [
     {
       "src": "dist/server.js",
-      "use": "@vercel/node"
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": ["dist/**"]
+      }
     },
     {
       "src": "frontend/package.json",
@@ -19,12 +22,35 @@
       "dest": "dist/server.js"
     },
     {
-      "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))$",
-      "dest": "/frontend/dist/$1"
+      "src": "^/favicon.ico$",
+      "dest": "frontend/dist/favicon.ico"
+    },
+    {
+      "src": "^/js/(.*)",
+      "dest": "frontend/dist/js/$1"
+    },
+    {
+      "src": "^/css/(.*)",
+      "dest": "frontend/dist/css/$1"
+    },
+    {
+      "src": "^/img/(.*)",
+      "dest": "frontend/dist/img/$1"
+    },
+    {
+      "src": "^/assets/(.*)",
+      "dest": "frontend/dist/assets/$1"
+    },
+    {
+      "src": "^/fonts/(.*)",
+      "dest": "frontend/dist/fonts/$1"
+    },
+    {
+      "handle": "filesystem"
     },
     {
       "src": "/(.*)", 
-      "dest": "/frontend/dist/index.html"
+      "dest": "frontend/dist/index.html"
     }
   ],
   "crons": [

@@ -14,6 +14,7 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     // You can modify the request here before it's sent
+    console.log(`[API Request] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
     return config;
   },
   (error) => {
@@ -49,6 +50,12 @@ api.interceptors.response.use(
 
 // API service methods
 export default {
+  // Debug endpoint to check API connectivity
+  checkConnection() {
+    console.log('[api.js] Checking API connection');
+    return api.get('/debug');
+  },
+  
   // Articles endpoints
   articles: {
     getAll(params = {}) {
