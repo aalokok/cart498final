@@ -11,11 +11,11 @@
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "frontend": "cd frontend && npm run serve",
+    "frontend": "cd frontend && npm run dev",
     "dev:all": "concurrently \"npm run dev\" \"npm run frontend\"",
-    "build:frontend": "cd frontend && npm install && npm install -g @vue/cli && npm run build",
+    "build:frontend": "cd frontend && npm install && npm run build",
     "build:backend": "npm install && npm run build",
-    "vercel-build": "npm run build:backend && cd frontend && npm install && npx @vue/cli-service build"
+    "vercel-build": "npm run build:backend && cd frontend && npm install && npm run build"
   },
   "keywords": [
     "news",
