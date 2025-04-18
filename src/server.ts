@@ -35,7 +35,32 @@ app.use(errorHandler);
 
 // REMOVED scheduleJobs() call
 
+// --- Local Development Server Start --- 
+// (Vercel ignores this block because it uses the exported app)
+const PORT = env.PORT || 3000; // Ensure PORT is defined
+
+const startLocalServer = async () => {
+  try {
+    // Ensure DB is connected before listening (redundant if connectDatabase() above awaits)
+    // await connectDatabase(); 
+    
+    app.listen(PORT, () => {
+      console.log(`LOCAL Server running in ${env.NODE_ENV} mode on port ${PORT}`);
+      console.log(`API available at http://localhost:${PORT}/api`);
+    });
+  } catch (error) {
+    console.error('Error starting LOCAL server:', error);
+    process.exit(1);
+  }
+};
+
+// Only call startLocalServer if not in production (i.e., running locally)
+if (process.env.NODE_ENV !== 'production') {
+  startLocalServer();
+}
+// --- End Local Development Server Start ---
+
 // Export the app instance for Vercel
 export default app;
 
-// REMOVED startServer function and app.listen() 
+// REMOVED old startServer function structure 
