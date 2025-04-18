@@ -9,7 +9,7 @@ const getBaseUrl = () => {
       return 'https://the-actual-informer-api.vercel.app/api';
     }
     // For Render.com deployment
-    return 'https://the-actual-informer-api.onrender.com/api/articles';
+    return 'https://the-actual-informer-api.onrender.com/api';
   }
   // In development, use the relative URL which will be handled by the proxy
   return '/api';
