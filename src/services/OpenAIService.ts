@@ -34,7 +34,7 @@ export class OpenAIService {
       if (!env.OPENAI_API_KEY) {
           throw new ApiError(500, 'OpenAI API key is not configured');
       }
-      throw new Error('OpenAI client not initialized'); 
+      throw new Error('OpenAI client not initialized');
     }
 
     const maxContentLength = 3000;
@@ -65,14 +65,14 @@ export class OpenAIService {
       temperature = 0.7;
       maxTokens = 2000;
     }
-
+    
     const userPrompt = `Original Title: ${title}
 Original Article:
 """
 ${truncatedContent}
 """
 Rewrite this article with an extreme ${bias}-wing bias:
-`;
+    `;
 
     const params: ChatCompletionCreateParamsNonStreaming = {
       model: model,
