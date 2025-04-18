@@ -1,0 +1,36 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "dist/server.js", 
+      "use": "@vercel/node",
+      "config": { "includeFiles": ["dist/**"] }
+    },
+    {
+      "src": "frontend/package.json", 
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "dist/server.js"
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+        "src": "/.*",
+        "dest": "/frontend/dist/index.html"
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/articles/cron/refresh-and-clean",
+      "schedule": "0 0 * * *" 
+    }
+  ]
+} 

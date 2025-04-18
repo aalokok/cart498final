@@ -3,7 +3,7 @@ import cors from 'cors';
 import { connectDatabase } from './config/database';
 import { env, validateEnv } from './config/env';
 import { errorHandler } from './utils/error';
-import { scheduleJobs } from './utils/scheduler';
+// import { scheduleJobs } from './utils/scheduler'; // Removed scheduler import
 import articleRoutes from './routes/articleRoutes';
 
 // Validate environment variables
@@ -19,42 +19,23 @@ app.use(express.json());
 // API Routes
 app.use('/api/articles', articleRoutes);
 
-// Base route
-app.get('/', (req, res) => {
+// Base route (Optional for API, good for testing)
+app.get('/api', (req, res) => { // Changed route slightly for clarity
   res.json({ message: 'Welcome to The Actual Informer API' });
 });
 
-// Not found middleware
-app.use((req, res, next) => {
-  res.status(404).json({
-    success: false,
-    error: `Cannot ${req.method} ${req.originalUrl}`
-  });
-});
+// !! Important: Connect Database before exporting app !!
+// Vercel handles startup differently. Consider connecting on the first request
+// or using connection pooling suitable for serverless environments.
+// Ensure Mongoose connection logic handles this.
+connectDatabase(); // Assuming this handles pooling or connects early
 
-// Error handling middleware
+// Error handling middleware - Keep this AFTER your routes
 app.use(errorHandler);
 
-// Start server
-const PORT = env.PORT;
+// REMOVED scheduleJobs() call
 
-const startServer = async () => {
-  try {
-    // Connect to database
-    await connectDatabase();
-    
-    // Start Express server
-    app.listen(PORT, () => {
-      console.log(`Server running in ${env.NODE_ENV} mode on port ${PORT}`);
-      console.log(`API available at http://localhost:${PORT}/api/articles`);
-      
-      // Start scheduled tasks using the new cron-based scheduler
-      scheduleJobs();
-    });
-  } catch (error) {
-    console.error('Error starting server:', error);
-    process.exit(1);
-  }
-};
+// Export the app instance for Vercel
+export default app;
 
-startServer(); 
+// REMOVED startServer function and app.listen() 

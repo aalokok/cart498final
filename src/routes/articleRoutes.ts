@@ -7,7 +7,8 @@ import {
   fetchAllArticles,
   rewriteArticleExtremeRight,
   rewriteArticleExtremeLeft,
-  forceRefreshAndCleanArticles
+  forceRefreshAndCleanArticles,
+  runCronRefreshAndClean
 } from '../controllers/articleController';
 
 const router = express.Router();
@@ -38,5 +39,8 @@ router.post('/:id/rewrite-extreme-left', rewriteArticleExtremeLeft);
 
 // Manually trigger fetch and clean
 router.post('/refresh-and-clean', forceRefreshAndCleanArticles);
+
+// --- Vercel Cron Job Endpoint --- 
+router.get('/cron/refresh-and-clean', runCronRefreshAndClean); 
 
 export default router;
