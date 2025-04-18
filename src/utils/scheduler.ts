@@ -8,46 +8,12 @@ const newsService = new NewsService();
 /**
  * Fetch latest news and process them
  */
-export const fetchAndProcessNews = async () => {
-  try {
-    console.log('Article fetching disabled per user request');
-    /*
-    console.log('Scheduled task: Fetching all news articles at once...');
-    
-    // Use our new method to fetch all articles at once and categorize them
-    // Pass a larger number for pageSize to get more articles
-    await newsService.fetchAllArticlesAtOnce(100, 'en', '24h');
-    console.log('Successfully fetched and stored articles in MongoDB');
-    
-    // Process pending articles
-    const processedCount = await contentTransformationService.processPendingArticles();
-    console.log(`Processed ${processedCount} articles`);
-    */
-  } catch (error) {
-    console.error('Error in scheduled news fetch:', error);
-  }
-};
+// REMOVED unused fetchAndProcessNews function
 
 /**
  * Start scheduled tasks
  */
-export const startScheduledTasks = () => {
-  // Get interval from environment variable (in minutes)
-  const intervalMinutes = env.NEWS_REFRESH_INTERVAL_MINUTES;
-  const intervalMs = intervalMinutes * 60 * 1000;
-  
-  console.log(`Starting scheduled tasks. News refresh interval: ${intervalMinutes} minutes`);
-  
-  // Do not run article fetching at startup
-  console.log('Article fetching disabled per user request');
-  // fetchAndProcessNews();
-  
-  // Do not set interval for future runs
-  console.log(`Automatic article fetching disabled per user request`);
-  // setInterval(fetchAndProcessNews, intervalMs);
-  
-  return;
-};
+// REMOVED unused startScheduledTasks function
 
 // Function to process pending articles - This functionality is now removed
 // async function processPendingArticlesJob() {
@@ -79,10 +45,24 @@ async function fetchLatestNewsJob() {
   }
 };
 
+// Function to run the daily fetch and clean job
+async function dailyFetchAndCleanJob() {
+  logger.info('Scheduler running: Daily Fetch and Clean Job...');
+  try {
+    await newsService.fetchAndCleanDailyArticles(50); // Keep 50 articles
+  } catch (error) {
+    logger.error('Scheduler error running daily fetch and clean job:', error);
+  }
+};
+
 export const scheduleJobs = () => {
-  // Schedule fetching latest news every hour
-  cron.schedule('0 * * * *', fetchLatestNewsJob);
-  logger.info('Scheduled job: Fetch latest news every hour (at minute 0).');
+  // Schedule fetching latest news every hour (Can be removed if daily job is sufficient)
+  // cron.schedule('0 * * * *', fetchLatestNewsJob);
+  // logger.info('Scheduled job: Fetch latest news every hour (at minute 0).');
+
+  // Schedule the daily fetch and clean job at midnight
+  cron.schedule('0 0 * * *', dailyFetchAndCleanJob);
+  logger.info('Scheduled job: Daily fetch and clean articles at midnight.');
 
   // Schedule processing pending articles every 3 hours (Job is inactive)
   // cron.schedule('0 */3 * * *', processPendingArticlesJob);

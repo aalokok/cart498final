@@ -67,6 +67,12 @@ export default {
     rewriteArticleExtremeLeft(id) {
       console.log(`[api.js] Calling rewrite extreme left for ID: ${id}`);
       return api.post(`/articles/${id}/rewrite-extreme-left`);
+    },
+    
+    // New function to trigger manual refresh
+    forceRefreshAndClean() {
+      console.log(`[api.js] Calling manual refresh and clean endpoint`);
+      return api.post('/articles/refresh-and-clean');
     }
   }
 };

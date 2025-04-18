@@ -3,7 +3,7 @@ import cors from 'cors';
 import { connectDatabase } from './config/database';
 import { env, validateEnv } from './config/env';
 import { errorHandler } from './utils/error';
-import { startScheduledTasks } from './utils/scheduler';
+import { scheduleJobs } from './utils/scheduler';
 import articleRoutes from './routes/articleRoutes';
 
 // Validate environment variables
@@ -48,9 +48,8 @@ const startServer = async () => {
       console.log(`Server running in ${env.NODE_ENV} mode on port ${PORT}`);
       console.log(`API available at http://localhost:${PORT}/api/articles`);
       
-      // Start scheduled tasks after server is running
-      startScheduledTasks();
-      console.log('Automatic article fetching DISABLED per user request');
+      // Start scheduled tasks using the new cron-based scheduler
+      scheduleJobs();
     });
   } catch (error) {
     console.error('Error starting server:', error);

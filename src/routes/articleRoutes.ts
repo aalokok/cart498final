@@ -7,6 +7,7 @@ import {
   fetchAllArticles,
   rewriteArticleExtremeRight,
   rewriteArticleExtremeLeft,
+  forceRefreshAndCleanArticles
 } from '../controllers/articleController';
 
 const router = express.Router();
@@ -34,5 +35,8 @@ router.post('/:id/rewrite-extreme-right', rewriteArticleExtremeRight);
 
 // Dynamically rewrite an article with extreme left bias
 router.post('/:id/rewrite-extreme-left', rewriteArticleExtremeLeft);
+
+// Manually trigger fetch and clean
+router.post('/refresh-and-clean', forceRefreshAndCleanArticles);
 
 export default router;
