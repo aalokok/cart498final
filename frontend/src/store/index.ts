@@ -136,12 +136,14 @@ export default createStore<State>({
       }
     },
     async fetchAllArticlesAtOnce({ commit, dispatch }) {
-      // Just use the new fetchAllArticlesAtOnce method
-      return dispatch("fetchAllArticlesAtOnce");
+      console.log('[Store Action] Fetching all articles (no limit) via fetchAllArticlesFromDatabase');
+      // Dispatch the action that actually hits the /articles/all endpoint
+      return dispatch("fetchAllArticlesFromDatabase"); 
     },
     async fetchAllCategoriesArticles({ commit, dispatch }) {
-      // Just use the new fetchAllArticlesAtOnce method
-      return dispatch("fetchAllArticlesAtOnce");
+      console.log('[Store Action] Fetching all categories articles via fetchAllArticlesFromDatabase');
+       // Dispatch the action that actually hits the /articles/all endpoint
+      return dispatch("fetchAllArticlesFromDatabase");
     },
     async fetchArticleById({ commit }, id: string) {
       commit("SET_LOADING", true);
@@ -183,56 +185,52 @@ export default createStore<State>({
         commit("SET_LOADING", false);
       }
     },
-    async fetchArticlesByCategory({ commit, state }, category) {
+    async fetchArticlesByCategory({ commit, state, dispatch }, category) {
       commit("SET_LOADING", true);
       commit("CLEAR_ERROR");
 
       try {
-        // Don't fetch category-specific articles anymore - use our single-fetch approach
-        // First check if we have articles in the store already
         if (state.articles.length === 0) {
-          // If no articles yet, fetch all at once using our new method
-          console.log(`No articles in store, fetching all at once`);
-          const result = await this.dispatch("fetchAllArticlesAtOnce");
-          if (!result) {
-            throw new Error("Failed to fetch articles");
+          console.log(`[Store Action] No articles in store, fetching all at once`);
+          // Dispatch the corrected action
+          const result = await dispatch("fetchAllArticlesAtOnce"); 
+          if (!result || !result.success) { // Check result success
+            throw new Error("Failed to fetch initial articles");
           }
+          // After fetching, the state.articles should be populated, 
+          // filtering below will now work correctly.
         } else {
           console.log(
-            `Using ${state.articles.length} existing articles from store`
+            `[Store Action] Using ${state.articles.length} existing articles from store`
           );
         }
 
         // Now filter the articles client-side by category
-        // If category is 'all', don't filter
         if (category === "all") {
           commit("SET_FILTERED_ARTICLES", state.articles);
         } else {
-          // Filter by category
           const filteredArticles = state.articles.filter(
             (article) =>
               article.category === category ||
               article.source?.category === category
           );
-
           console.log(
-            `Filtered ${filteredArticles.length} articles for category: ${category}`
+            `[Store Action] Filtered ${filteredArticles.length} articles for category: ${category}`
           );
-
           if (filteredArticles.length === 0) {
             console.warn(
-              `No articles found for category: ${category}, showing all available articles instead`
+              `[Store Action] No articles found for category: ${category}, showing all available articles instead`
             );
-            commit("SET_FILTERED_ARTICLES", state.articles.slice(0, 10));
+            // Show all articles if category filter yields none
+            commit("SET_FILTERED_ARTICLES", state.articles);
           } else {
             commit("SET_FILTERED_ARTICLES", filteredArticles);
           }
         }
-
         return { success: true };
       } catch (error: any) {
         console.error(
-          `Error fetching articles for category ${category}:`,
+          `[Store Action] Error in fetchArticlesByCategory for ${category}:`,
           error
         );
         commit(
@@ -240,12 +238,10 @@ export default createStore<State>({
           error.response?.data?.error ||
             `Failed to fetch articles for ${category}`
         );
-
-        // As a fallback, show any articles we have already
+        // Fallback: Show all articles if an error occurred during category fetch/filter
         if (state.articles.length > 0) {
-          commit("SET_FILTERED_ARTICLES", state.articles.slice(0, 10));
+           commit("SET_FILTERED_ARTICLES", state.articles);
         }
-
         return null;
       } finally {
         commit("SET_LOADING", false);
@@ -255,45 +251,27 @@ export default createStore<State>({
       commit("SET_LOADING", true);
       commit("CLEAR_ERROR");
       try {
-        console.log("Fetching ALL articles from MongoDB without limit...");
-        const response = await axios.get(`${API_URL}/articles/all`);
+        console.log("[Store Action] Fetching ALL articles from database (/articles/all endpoint)...");
+        const response = await axios.get(`${API_URL}/articles/all`); // Correct endpoint
         console.log(
-          `Retrieved ${response.data.count} total articles from MongoDB`
+          `[Store Action] Retrieved ${response.data.count} total articles from MongoDB via /articles/all`
         );
-
-        // Ensure articles have valid ID format and log more details
-        if (
-          response.data &&
-          response.data.data &&
-          Array.isArray(response.data.data)
-        ) {
+        if (response.data && response.data.success && Array.isArray(response.data.data)) {
           const articles = response.data.data;
-
-          console.log(
-            `First 3 articles:`,
-            articles.slice(0, 3).map((a: Article) => ({
-              id: a._id,
-              title: a.title.substring(0, 30) + "...",
-              publishedAt: a.publishedAt,
-            }))
-          );
-
-          // Make sure we're displaying all articles
-          commit("SET_ARTICLES", articles);
-          console.log(`Set ${articles.length} articles in state`);
+          commit("SET_ARTICLES", articles); // Update main articles list
+          commit("SET_FILTERED_ARTICLES", articles); // Also update filtered list initially
+          console.log(`[Store Action] Set ${articles.length} articles in state from /articles/all`);
+          return { success: true, data: articles }; // Return success and data
         } else {
-          console.error("Invalid response format:", response.data);
-          commit("SET_ERROR", "Invalid response format from server");
+          console.error("[Store Action] Invalid response format from /articles/all:", response.data);
+          commit("SET_ERROR", "Invalid response format from server (fetching all)");
+           return { success: false, error: "Invalid response format" };
         }
-
-        return response.data;
       } catch (error: any) {
-        commit(
-          "SET_ERROR",
-          error.response?.data?.error || "Failed to fetch all articles"
-        );
-        console.error("Error fetching all articles:", error);
-        return null;
+        const errorMsg = error.response?.data?.error || "Failed to fetch all articles from database";
+        commit("SET_ERROR", errorMsg);
+        console.error("[Store Action] Error fetching all articles from database:", error);
+        return { success: false, error: errorMsg };
       } finally {
         commit("SET_LOADING", false);
       }
