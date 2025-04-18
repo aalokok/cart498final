@@ -26,7 +26,7 @@ services:
   - type: web
     name: the-actual-informer
     env: static
-    buildCommand: cd frontend && npm install && npm run build
+    buildCommand: cd frontend && npm install --production=false && npm run render-build
     staticPublishPath: ./frontend/dist
     routes:
       - type: rewrite

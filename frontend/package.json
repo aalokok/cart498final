@@ -6,9 +6,14 @@
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
-    "vercel-build": "vue-cli-service build"
+    "vercel-build": "vue-cli-service build",
+    "render-build": "NODE_ENV=production vue-cli-service build"
   },
   "dependencies": {
+    "@vue/cli-service": "~5.0.0",
+    "@vue/cli-plugin-babel": "~5.0.0",
+    "@vue/cli-plugin-eslint": "~5.0.0",
+    "@vue/cli-plugin-typescript": "~5.0.0",
     "axios": "^1.8.4",
     "bootstrap": "^5.3.5",
     "bootstrap-vue-next": "^0.28.5",
@@ -23,10 +28,6 @@
     "@types/lodash": "^4.17.16",
     "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@typescript-eslint/parser": "^5.62.0",
-    "@vue/cli-plugin-babel": "~5.0.0",
-    "@vue/cli-plugin-eslint": "~5.0.0",
-    "@vue/cli-plugin-typescript": "~5.0.0",
-    "@vue/cli-service": "~5.0.0",
     "@vue/eslint-config-typescript": "^9.1.0",
     "eslint": "^7.32.0",
     "eslint-plugin-vue": "^8.0.3",
