@@ -9,7 +9,7 @@ const getBaseUrl = () => {
       return 'https://the-actual-informer-api.vercel.app/api';
     }
     // For Render.com deployment
-    return 'https://the-actual-informer-api.onrender.com/api';
+    return 'https://the-actual-informer-api.onrender.com/api/articles';
   }
   // In development, use the relative URL which will be handled by the proxy
   return '/api';
@@ -18,7 +18,7 @@ const getBaseUrl = () => {
 // Create a configurable axios instance
 const api = axios.create({
   baseURL: getBaseUrl(),
-  timeout: 15000,
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json'

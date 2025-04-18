@@ -15,24 +15,30 @@ const DEFAULT_VOICE_ID = '21m00Tcm4TlvDq8ikWAM'; // Example default voice ID
 
 // Fetch all articles from database
 export const getAllArticles = async (req: Request, res: Response, next: NextFunction) => {
+  console.log('[Controller:getAllArticles] Request received'); // Log start
   try {
-    const category = req.query.category as string;
+    const { category = 'all' } = req.query;
+    console.log(`[Controller:getAllArticles] Retrieving articles from MongoDB: category=${category}`);
+    const articles = await ArticleModel.find({ 
+        ...(category !== 'all' && { category: category as string }) 
+    })
+    .sort({ publishedAt: -1 })
+    .limit(20);
     
-    logger.info(`[getAllArticles] Retrieving articles from MongoDB: category=${category || 'all'}`);
+    console.log(`[Controller:getAllArticles] Found ${articles.length} articles for category=${category}`); // Log success
     
-    // Use the enhanced NewsService method that removes duplicates and limits to 20 articles
-    const articles = await newsService.getAllArticles(20, category);
+    // Remove duplicates based on title - consider moving this logic if performance is critical
+    const uniqueArticles = Array.from(new Map(articles.map(article => [article.title, article])).values());
+    console.log(`[Controller:getAllArticles] Returning ${uniqueArticles.length} unique articles.`);
     
-    logger.info(`[getAllArticles] Retrieved ${articles.length} articles from MongoDB with duplicates removed`);
-    
-    res.json({
+    res.status(200).json({
       success: true,
-      count: articles.length,
-      data: articles
+      count: uniqueArticles.length,
+      data: uniqueArticles
     });
   } catch (error) {
-    logger.error('Error in getAllArticles:', error);
-    next(error);
+    console.error('[Controller:getAllArticles] Error retrieving articles:', error); // Log error
+    next(error); // Pass error to global error handler
   }
 };
 
