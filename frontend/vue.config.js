@@ -6,7 +6,7 @@ module.exports = defineConfig({
   publicPath: '/',
   // Output to the dist directory
   outputDir: 'dist',
-  // Don't add a subfolder for assets
+  // Place assets in root of dist, not in subfolder
   assetsDir: '',
   devServer: {
     proxy: {

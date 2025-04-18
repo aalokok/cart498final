@@ -20,9 +20,13 @@ app.use(express.json());
 // API Routes
 app.use('/api/articles', articleRoutes);
 
-// Base route (Optional for API, good for testing)
-app.get('/api', (req, res) => { // Changed route slightly for clarity
-  res.json({ message: 'Welcome to The Actual Informer API' });
+// Base route for API testing
+app.get('/api', (req, res) => {
+  res.json({ 
+    message: 'Welcome to The Actual Informer API',
+    version: '1.0.0',
+    time: new Date().toISOString()
+  });
 });
 
 // Debug route to check if API is responding
@@ -53,39 +57,24 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-// !! Important: Connect Database before exporting app !!
-// Vercel handles startup differently. Consider connecting on the first request
-// or using connection pooling suitable for serverless environments.
-// Ensure Mongoose connection logic handles this.
-connectDatabase(); // Assuming this handles pooling or connects early
+// Connect to database
+connectDatabase().catch(err => {
+  console.error('Database connection error:', err);
+});
 
-// Error handling middleware - Keep this AFTER your routes
+// Error handling middleware - must be after routes
 app.use(errorHandler);
 
 // REMOVED scheduleJobs() call
 
 // --- Local Development Server Start --- 
 // (Vercel ignores this block because it uses the exported app)
-const PORT = env.PORT || 3000; // Ensure PORT is defined
-
-const startLocalServer = async () => {
-  try {
-    // Ensure DB is connected before listening (redundant if connectDatabase() above awaits)
-    // await connectDatabase(); 
-    
-    app.listen(PORT, () => {
-      console.log(`LOCAL Server running in ${env.NODE_ENV} mode on port ${PORT}`);
-      console.log(`API available at http://localhost:${PORT}/api`);
-    });
-  } catch (error) {
-    console.error('Error starting LOCAL server:', error);
-    process.exit(1);
-  }
-};
-
-// Only call startLocalServer if not in production (i.e., running locally)
 if (process.env.NODE_ENV !== 'production') {
-  startLocalServer();
+  const PORT = env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`LOCAL Server running in ${env.NODE_ENV} mode on port ${PORT}`);
+    console.log(`API available at http://localhost:${PORT}/api`);
+  });
 }
 // --- End Local Development Server Start ---
 
