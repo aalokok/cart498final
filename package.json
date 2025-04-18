@@ -13,7 +13,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "frontend": "cd frontend && npm run serve",
     "dev:all": "concurrently \"npm run dev\" \"npm run frontend\"",
-    "build:frontend": "cd frontend && npm install && npm run build",
+    "build:frontend": "npm install -g @vue/cli-service && cd frontend && npm install && npm run build",
     "build:backend": "npm install && npm run build",
     "vercel-build": "npm run build:backend && npm run build:frontend"
   },
