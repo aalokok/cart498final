@@ -47,7 +47,20 @@ connectDatabase().catch(error => {
 });
 
 // Determine the port explicitly
-const PORT: number = process.env.PORT ? parseInt(process.env.PORT, 10) : (env.PORT || 3000);
+console.log(`[Server Startup] Raw process.env.PORT from Render: '${process.env.PORT}' (Type: ${typeof process.env.PORT})`);
+let parsedPort = process.env.PORT ? parseInt(process.env.PORT, 10) : NaN;
+
+// Check if parsing failed or resulted in NaN
+if (isNaN(parsedPort)) {
+  console.warn(`[Server Startup] Failed to parse process.env.PORT ('${process.env.PORT}'). Falling back.`);
+  // Fallback logic: Try env.PORT from .env file, then default to 3000
+  parsedPort = env.PORT || 3000; 
+}
+
+// Ensure the final port is a valid number within the allowed range
+const PORT: number = (parsedPort >= 0 && parsedPort < 65536) ? parsedPort : 3000;
+console.log(`[Server Startup] Final calculated PORT: ${PORT}`);
+
 console.log(`[Server Startup] Attempting to listen on port: ${PORT}, Interface: 0.0.0.0`);
 
 // Start the server
