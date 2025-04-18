@@ -4,12 +4,12 @@ services:
     name: the-actual-informer-api
     env: node
     buildCommand: npm install --production=false && npm run build
-    startCommand: node render-entry.js
+    startCommand: node dist/server.js
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
-        sync: false
+        value: $PORT
       - key: MONGODB_URI
         sync: false
       - key: OPENAI_API_KEY
@@ -20,13 +20,13 @@ services:
         sync: false
       - key: NEWS_REFRESH_INTERVAL_MINUTES
         value: 720
-    healthCheckPath: /
+    healthCheckPath: /api/articles
 
   # Frontend Service
   - type: web
     name: the-actual-informer
     env: static
-    buildCommand: cd frontend && npm install --production=false && npx vue-cli-service build
+    buildCommand: cd frontend && npm install --production=false && npm run render-build
     staticPublishPath: ./frontend/dist
     routes:
       - type: rewrite

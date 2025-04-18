@@ -6,7 +6,8 @@ import { errorHandler } from './utils/error';
 import { scheduleJobs } from './utils/scheduler';
 import articleRoutes from './routes/articleRoutes';
 
-// Validate environment variables
+// Validate environment variables first
+// If required variables (like MONGODB_URI) are missing on Render, this will exit
 validateEnv();
 
 // Create Express application
@@ -41,21 +42,34 @@ app.use(errorHandler);
 // Connect to database
 connectDatabase().catch(error => {
   console.error('Error connecting to database:', error);
-  process.exit(1);
+  // Don't exit immediately, allow server to potentially start and report error
+  // process.exit(1);
 });
 
-// Always start the server regardless of environment
-const PORT = process.env.PORT || env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running in ${env.NODE_ENV} mode on port ${PORT}`);
+// Determine the port explicitly
+const PORT: number = process.env.PORT ? parseInt(process.env.PORT, 10) : (env.PORT || 3000);
+console.log(`[Server Startup] Attempting to listen on port: ${PORT}, Interface: 0.0.0.0`);
+
+// Start the server
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`[Server Startup] Successfully listening on port ${PORT}`);
+  console.log(`Server running in ${env.NODE_ENV} mode`);
   
+  // Only log the API URL in development
   if (env.NODE_ENV === 'development') {
     console.log(`API available at http://localhost:${PORT}/api/articles`);
   }
   
   // Start scheduled tasks
+  console.log(`[Server Startup] Starting scheduled jobs...`);
   scheduleJobs();
+  console.log(`[Server Startup] Scheduled jobs initiated.`);
 });
 
-// Export the app for potential serverless environments
+// Log any potential unhandled errors during startup
+app.on('error', (error) => {
+  console.error('[Server Startup] Express app error event:', error);
+});
+
+// Export for serverless environments (Vercel)
 export default app; 
