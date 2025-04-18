@@ -38,29 +38,27 @@ app.use((req, res, next) => {
 // Error handling middleware
 app.use(errorHandler);
 
-// Start server
-const PORT = env.PORT;
-
 // Connect to database immediately for Vercel serverless environment
 connectDatabase().catch(error => {
   console.error('Error connecting to database:', error);
   process.exit(1);
 });
 
-// Only start the server in development mode
-if (env.NODE_ENV === 'development') {
-  app.listen(PORT, () => {
-    console.log(`Server running in ${env.NODE_ENV} mode on port ${PORT}`);
-    console.log(`API available at http://localhost:${PORT}/api/articles`);
-    
-    // Start scheduled tasks using the new cron-based scheduler
-    scheduleJobs();
-  });
-} else {
-  // In production (Vercel), we're in a serverless environment
-  // The scheduler will need to be handled differently (e.g., with Vercel Cron)
-  console.log('Running in serverless mode');
-}
+// Get the port
+const PORT = process.env.PORT || env.PORT || 3000;
 
-// Export for serverless
+// Start the server in both development and production
+app.listen(PORT, () => {
+  console.log(`Server running in ${env.NODE_ENV} mode on port ${PORT}`);
+  
+  // Only log the API URL in development
+  if (env.NODE_ENV === 'development') {
+    console.log(`API available at http://localhost:${PORT}/api/articles`);
+  }
+  
+  // Start scheduled tasks in both environments
+  scheduleJobs();
+});
+
+// Also export for serverless environments (Vercel)
 export default app; 
