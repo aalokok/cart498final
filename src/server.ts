@@ -42,41 +42,22 @@ app.use(errorHandler);
 // Connect to database
 connectDatabase().catch(error => {
   console.error('Error connecting to database:', error);
-  // Don't exit immediately, allow server to potentially start and report error
-  // process.exit(1);
 });
 
-// Determine the port explicitly
-console.log(`[Server Startup] Raw process.env.PORT from Render: '${process.env.PORT}' (Type: ${typeof process.env.PORT})`);
-let parsedPort = process.env.PORT ? parseInt(process.env.PORT, 10) : NaN;
-
-// Check if parsing failed or resulted in NaN
-if (isNaN(parsedPort)) {
-  console.warn(`[Server Startup] Failed to parse process.env.PORT ('${process.env.PORT}'). Falling back.`);
-  // Fallback logic: Try env.PORT from .env file, then default to 3000
-  parsedPort = env.PORT || 3000; 
-}
-
-// Ensure the final port is a valid number within the allowed range
-const PORT: number = (parsedPort >= 0 && parsedPort < 65536) ? parsedPort : 3000;
-console.log(`[Server Startup] Final calculated PORT: ${PORT}`);
-
-console.log(`[Server Startup] Attempting to listen on port: ${PORT}, Interface: 0.0.0.0`);
+// Determine the port - Trust Render's environment variable
+const PORT: number = parseInt(process.env.PORT || '3000', 10); // Use Render's PORT or default to 3000
+console.log(`[Server Startup] Render process.env.PORT: '${process.env.PORT}'`);
+console.log(`[Server Startup] Using PORT: ${PORT}`);
 
 // Start the server
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`[Server Startup] Successfully listening on port ${PORT}`);
   console.log(`Server running in ${env.NODE_ENV} mode`);
-  
-  // Only log the API URL in development
-  if (env.NODE_ENV === 'development') {
-    console.log(`API available at http://localhost:${PORT}/api/articles`);
-  }
-  
+
   // Start scheduled tasks
-  console.log(`[Server Startup] Starting scheduled jobs...`);
-  // scheduleJobs(); // Temporarily disabled for debugging
-  // console.log(`[Server Startup] Scheduled jobs initiated.`);
+  // console.log(`[Server Startup] Starting scheduled jobs...`); // Keep disabled for now
+  // scheduleJobs(); // Keep disabled for now
+  // console.log(`[Server Startup] Scheduled jobs initiated.`); // Keep disabled for now
 });
 
 // Log any potential unhandled errors during startup
