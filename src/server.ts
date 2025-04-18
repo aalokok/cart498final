@@ -24,6 +24,17 @@ app.get('/api', (req, res) => { // Changed route slightly for clarity
   res.json({ message: 'Welcome to The Actual Informer API' });
 });
 
+// Debug route to check if API is responding
+app.get('/api/debug', (req, res) => {
+  res.json({
+    message: 'API Debug Info',
+    env: process.env.NODE_ENV,
+    time: new Date().toISOString(),
+    headers: req.headers,
+    path: req.path
+  });
+});
+
 // !! Important: Connect Database before exporting app !!
 // Vercel handles startup differently. Consider connecting on the first request
 // or using connection pooling suitable for serverless environments.
