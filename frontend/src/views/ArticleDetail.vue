@@ -74,15 +74,6 @@
                         Read original article
                       </a>
                       <b-button 
-                        @click="generateFullArticle" 
-                        variant="outline-secondary" 
-                        class="ml-2" 
-                        :disabled="generatingArticle || article.isAiGenerated"
-                      >
-                        <b-spinner small v-if="generatingArticle"></b-spinner>
-                        {{ article.isAiGenerated ? 'AI-Generated Article' : 'Generate Full Article' }}
-                      </b-button>
-                      <b-button 
                         @click="rewriteWithRightWingBias" 
                         variant="outline-danger" 
                         class="ml-2" 
@@ -110,13 +101,6 @@
                     
                     <div v-else class="text-center py-3">
                       <p class="text-muted">No explanation available yet</p>
-                      <b-button 
-                        @click="generateExplanation" 
-                        variant="info" 
-                        :disabled="explanationLoading"
-                      >
-                        Generate Analysis
-                      </b-button>
                     </div>
                   </div>
                 </div>
@@ -146,7 +130,6 @@ export default {
     return {
       article: null,
       explanationLoading: false,
-      generatingArticle: false,
       rewritingArticle: false,
       viewMode: 'original',
       localError: null
@@ -211,58 +194,6 @@ export default {
         this.localError = error.message || "Error loading article";
       }
     },
-    // Use the new API service for explanation generation
-    async generateExplanation() {
-      if (this.explanationLoading) return;
-      
-      this.explanationLoading = true;
-      this.localError = null;
-      
-      try {
-        const response = await apiService.articles.generateExplanation(this.articleId);
-        
-        if (response.data && response.data.success && response.data.data) {
-          // Update the article with the new explanation
-          if (!this.article) {
-            await this.fetchArticle();
-          } else {
-            this.article.explanation = response.data.data.explanation;
-          }
-        } else {
-          this.localError = "Failed to generate explanation. Try again later.";
-        }
-      } catch (error) {
-        console.error("Error generating explanation:", error);
-        this.localError = error.message || "Error generating explanation";
-      } finally {
-        this.explanationLoading = false;
-      }
-    },
-    
-    // Generate a full article from the headline using OpenAI
-    async generateFullArticle() {
-      if (this.generatingArticle) return;
-      
-      this.generatingArticle = true;
-      this.localError = null;
-      
-      try {
-        const response = await apiService.articles.generateFullArticle(this.articleId);
-        
-        if (response.data && response.data.success && response.data.data) {
-          // Update the article with the new content
-          this.article = response.data.data;
-        } else {
-          this.localError = "Failed to generate article. Try again later.";
-        }
-      } catch (error) {
-        console.error("Error generating full article:", error);
-        this.localError = error.message || "Error generating full article";
-      } finally {
-        this.generatingArticle = false;
-      }
-    },
-    
     // Rewrite the article with right-wing bias using OpenAI
     async rewriteWithRightWingBias() {
       this.rewritingArticle = true;

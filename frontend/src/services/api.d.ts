@@ -12,12 +12,11 @@ interface ArticleApiMethods {
     fetchArticles(category?: string, page?: number, limit?: number): Promise<ApiResponse>;
     fetchAllArticles(): Promise<ApiResponse>;
     fetchArticleById(id: string): Promise<ApiResponse>;
-    generateExplanation(id: string): Promise<ApiResponse>;
     fetchLatestNews(category?: string): Promise<ApiResponse>;
     fetchAllNewsFromApi(): Promise<ApiResponse>;
     transformArticle(id: string, bias: string): Promise<ApiResponse>;
     processPendingArticles(): Promise<ApiResponse>;
-    generateFullArticle(id: string): Promise<ApiResponse>;
+    getById(id: string): Promise<ApiResponse>;
     rewriteArticleWithRightWingBias(id: string): Promise<ApiResponse>;
     processAllWithRightWingBias(): Promise<ApiResponse>;
     processDisplayedWithRightWingBias(): Promise<ApiResponse>;

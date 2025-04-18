@@ -59,22 +59,6 @@ export default {
       return api.get(`/articles/${id}`);
     },
     
-    generateExplanation(id) {
-      return api.post(`/articles/${id}/explanation`);
-    },
-    
-    generateFullArticle(id) {
-      return api.post(`/articles/${id}/generate-full-article`);
-    },
-    
-    rewriteWithRightWingBias(id) {
-      return api.post(`/articles/${id}/rewrite-right-wing`);
-    },
-    
-    processAllWithRightWingBias() {
-      return api.post(`/articles/process-all-right-wing`);
-    },
-    
     rewriteArticleExtremeRight(id) {
       console.log(`[api.js] Calling rewrite extreme right for ID: ${id}`);
       return api.post(`/articles/${id}/rewrite-extreme-right`);
