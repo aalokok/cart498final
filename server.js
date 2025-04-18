@@ -3,6 +3,6 @@
 
 // Load the compiled TypeScript server
 const app = require('./dist/server').default;
-
+ 
 // Export the Express app for Vercel
 module.exports = app; 
